@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>KLAXON — Parle à la route</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0c0e;
+    color: #e8e0d0;
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  button { font-family: 'Courier New', Courier, monospace; cursor: pointer; }
+  input  { font-family: 'Courier New', Courier, monospace; }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 32px;
+  }
+  .logo { display: flex; align-items: center; gap: 16px; }
+  .logo-icon { font-size: 52px; }
+  .logo-title { font-size: 36px; font-weight: bold; letter-spacing: .3em; color: #ffcc00; text-shadow: 0 0 20px #ffcc0066; }
+  .logo-sub   { font-size: 13px; color: #888; letter-spacing: .2em; text-transform: uppercase; }
+
+  .login-card {
+    background: #12151a;
+    border: 1px solid #2a2d33;
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .login-label { font-size: 13px; color: #aaa; letter-spacing: .1em; text-transform: uppercase; text-align: center; }
+
+  .plate-wrap {
+    display: flex;
+    background: #1c1f26;
+    border: 2px solid #2e3340;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .plate-flag {
+    padding: 0 12px;
+    display: flex; align-items: center;
+    font-size: 20px;
+    background: #23272f;
+    border-right: 2px solid #2e3340;
+  }
+  .plate-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #ffcc00; font-size: 20px; font-weight: bold;
+    letter-spacing: .2em; padding: 12px 16px;
+    text-transform: uppercase;
+  }
+  .plate-preview {
+    text-align: center; font-size: 28px; font-weight: bold;
+    color: #ffcc00; letter-spacing: .15em; padding: 8px 0;
+    text-shadow: 0 0 12px #ffcc0044;
+    min-height: 52px;
+  }
+  .btn-primary {
+    background: #ffcc00; color: #000; border: none;
+    border-radius: 10px; padding: 14px 0;
+    font-size: 15px; font-weight: bold; letter-spacing: .1em;
+    transition: opacity .2s;
+  }
+  .btn-primary:hover { opacity: .85; }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+  .login-note { text-align: center; font-size: 12px; color: #555; }
+
+  /* ── APP SHELL ── */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  #app.active { display: flex; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    background: #0e1116; border-bottom: 1px solid #1e2229;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .h-left { display: flex; align-items: center; gap: 10px; }
+  .h-title { font-size: 18px; font-weight: bold; letter-spacing: .3em; color: #ffcc00; }
+
+  .my-plate {
+    display: flex; align-items: center; gap: 8px;
+    background: #1c2030; border: 2px solid #2e3a52;
+    border-radius: 8px; padding: 6px 12px;
+  }
+  .my-plate span { color: #ffcc00; font-weight: bold; font-size: 15px; letter-spacing: .15em; }
+
+  nav {
+    display: flex; border-bottom: 1px solid #1e2229;
+    background: #0e1116; position: sticky; top: 57px; z-index: 9;
+  }
+  .nav-btn {
+    flex: 1; background: none; border: none;
+    border-bottom: 3px solid transparent;
+    color: #666; padding: 14px 8px;
+    font-size: 13px; letter-spacing: .05em;
+    transition: all .2s; position: relative;
+  }
+  .nav-btn.active { color: #ffcc00; border-bottom-color: #ffcc00; background: #12151a; }
+  .badge {
+    position: absolute; top: 8px; right: 12px;
+    background: #ff4444; color: #fff;
+    border-radius: 10px; font-size: 10px;
+    padding: 1px 5px; font-weight: bold;
+  }
+
+  .content { flex: 1; padding: 16px; max-width: 640px; width: 100%; margin: 0 auto; }
+
+  /* ── MESSAGES ── */
+  .msg-card {
+    background: #12151a; border: 1px solid #1e2229;
+    border-left: 4px solid #ffbb33;
+    border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 12px; transition: transform .1s;
+  }
+  .msg-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .msg-from { display: flex; align-items: center; gap: 8px; }
+  .plate-mini {
+    background: #1c2030; border: 1px solid #2e3a52;
+    border-radius: 5px; padding: 2px 8px;
+    color: #ffcc00; font-size: 13px; font-weight: bold; letter-spacing: .1em;
+  }
+  .from-label { color: #888; font-size: 12px; }
+  .unread-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ffcc00; box-shadow: 0 0 8px #ffcc00;
+    display: inline-block; margin-right: 4px;
+  }
+  .msg-time { font-size: 11px; color: #555; }
+  .msg-cat  { font-size: 11px; color: #888; margin-bottom: 8px; letter-spacing: .05em; }
+  .msg-text { font-size: 15px; line-height: 1.5; color: #ddd; margin-bottom: 12px; }
+  .msg-icon { font-size: 20px; margin-right: 8px; }
+
+  .reactions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .reaction-btn {
+    background: #1c2030; border: 1px solid #2a2d40;
+    border-radius: 20px; padding: 4px 10px;
+    font-size: 16px; display: flex; align-items: center; gap: 4px;
+    transition: background .15s;
+  }
+  .reaction-btn:hover { background: #252840; }
+  .reaction-count { font-size: 12px; color: #aaa; }
+
+  .empty { text-align: center; padding: 60px 20px; color: #555; font-size: 15px; }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-sub { font-size: 13px; color: #444; margin-top: 8px; }
+
+  /* ── SEND VIEW ── */
+  .section-label { font-size: 11px; color: #666; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 8px; }
+  .target-wrap { margin-bottom: 20px; }
+
+  .cat-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #1e2229; }
+  .cat-tab {
+    background: none; border: none; border-bottom: 3px solid transparent;
+    padding: 10px 12px; font-size: 13px; color: #888;
+    transition: all .2s; margin-bottom: -1px; white-space: nowrap;
+  }
+
+  .msg-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .msg-btn {
+    background: #12151a; border: 1px solid #2a2d33;
+    border-radius: 12px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    text-align: left; transition: all .15s; color: #ddd;
+  }
+  .msg-btn:hover { background: #1a1e26; border-color: #3a3d50; }
+  .msg-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .msg-btn-icon { font-size: 22px; flex-shrink: 0; }
+  .msg-btn-text { font-size: 14px; line-height: 1.4; }
+
+  .custom-wrap { margin-top: 8px; }
+  .custom-row  { display: flex; gap: 10px; }
+  .custom-input {
+    flex: 1; background: #12151a; border: 1px solid #2e3340;
+    border-radius: 10px; color: #e8e0d0; font-size: 14px;
+    padding: 12px 14px; outline: none;
+  }
+  .custom-input:focus { border-color: #ffcc0066; }
+  .btn-send {
+    background: #ffcc00; color: #000; border: none;
+    border-radius: 10px; padding: 12px 18px;
+    font-size: 18px; font-weight: bold; transition: opacity .2s;
+  }
+  .btn-send:hover { opacity: .85; }
+  .btn-send:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── FLASH ── */
+  #flash {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+    border-radius: 10px; padding: 12px 24px; font-size: 14px;
+    z-index: 100; white-space: nowrap; letter-spacing: .05em;
+    display: none; border: 1px solid;
+  }
+  #flash.success { background: #1a3a1a; border-color: #44dd88; color: #44dd88; }
+  #flash.error   { background: #3a1a1a; border-color: #ff4444; color: #ff4444; }
+
+  /* ── TABS ── */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  @media (max-width: 480px) {
+    .logo-title { font-size: 28px; }
+    .cat-tab { font-size: 11px; padding: 10px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="logo">
+    <span class="logo-icon">📡</span>
+    <div>
+      <div class="logo-title">KLAXON</div>
+      <div class="logo-sub">Parle à la route</div>
+    </div>
+  </div>
+  <div class="login-card">
+    <div class="login-label">Entrez votre plaque d'immatriculation</div>
+    <div class="plate-wrap">
+      <div class="plate-flag">🇫🇷</div>
+      <input class="plate-input" id="login-plate" placeholder="AB-123-CD" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false" />
+    </div>
+    <div class="plate-preview" id="login-preview">_ _  —  _ _ _  —  _ _</div>
+    <button class="btn-primary" id="login-btn" disabled>Prendre la route →</button>
+    <div class="login-note">Identifiez-vous pour envoyer et recevoir des messages</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="h-left">
+      <span style="font-size:20px">📡</span>
+      <span class="h-title">KLAXON</span>
+    </div>
+    <div class="my-plate">
+      <span>🇫🇷</span>
+      <span id="my-plate-display"></span>
+    </div>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" data-tab="inbox">📥 Reçus<span class="badge" id="unread-badge" style="display:none"></span></button>
+    <button class="nav-btn" data-tab="send">📤 Envoyer</button>
+    <button class="nav-btn" data-tab="sent">📨 Envoyés</button>
+  </nav>
+
+  <div class="content">
+
+    <!-- INBOX -->
+    <div class="tab-content active" id="tab-inbox">
+      <div id="inbox-list"></div>
+    </div>
+
+    <!-- SEND -->
+    <div class="tab-content" id="tab-send">
+      <div class="target-wrap">
+        <div class="section-label">Plaque cible</div>
+        <div class="plate-wrap">
+          <div class="plate-flag">🇫🇷</div>
+          <input class="plate-input" id="target-plate" placeholder="AB-123-CD" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false" />
+        </div>
+        <div class="plate-preview" id="target-preview" style="font-size:22px;min-height:40px;padding:4px 0"></div>
+      </div>
+
+      <div class="cat-tabs" id="cat-tabs"></div>
+      <div class="msg-grid" id="msg-grid"></div>
+
+      <div class="custom-wrap">
+        <div class="section-label">Message personnalisé</div>
+        <div class="custom-row">
+          <input class="custom-input" id="custom-msg" placeholder="Écrire un message libre..." maxlength="120" />
+          <button class="btn-send" id="custom-send">📤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SENT -->
+    <div class="tab-content" id="tab-sent">
+      <div id="sent-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="flash"></div>
+
+<script>
+const MESSAGES = {
+  "😤 Râler": [
+    { icon:"🚨", text:"Tu m'as failli percuter !" },
+    { icon:"📵", text:"Tu étais sur ton téléphone !" },
+    { icon:"🐌", text:"Tu roulais trop lentement sur la voie rapide" },
+    { icon:"🔦", text:"Tes phares en pleine face, ça aveugle !" },
+    { icon:"🚦", text:"Tu n'as pas respecté la priorité" },
+    { icon:"📍", text:"Tu as failli me couper la route" },
+    { icon:"🚫", text:"Stop au stationnement en double file !" },
+    { icon:"🔊", text:"Ton klaxon intempestif, merci non" },
+  ],
+  "😊 Complimenter": [
+    { icon:"👏", text:"Merci pour ta courtoisie !" },
+    { icon:"🙏", text:"Merci de m'avoir laissé passer" },
+    { icon:"⭐", text:"Excellent conducteur, bravo !" },
+    { icon:"🤝", text:"Super sympa de t'être arrêté" },
+    { icon:"💯", text:"Conduite exemplaire, continue ainsi" },
+  ],
+  "💡 Informer": [
+    { icon:"🔴", text:"Un de tes feux arrière est cassé" },
+    { icon:"💨", text:"Ton pneu semble à plat !" },
+    { icon:"🚪", text:"Ta portière n'est pas bien fermée" },
+    { icon:"⛽", text:"Quelque chose coule sous ta voiture" },
+    { icon:"🎒", text:"Tu as oublié quelque chose sur le toit !" },
+    { icon:"🔓", text:"Tu as oublié de fermer ton réservoir" },
+  ],
+};
+
+const CAT_COLORS = {
+  "😤 Râler":      "#ff4444",
+  "😊 Complimenter":"#44dd88",
+  "💡 Informer":   "#ffbb33",
+};
+
+const REACTIONS = ["👍","😂","😡","❤️","😱","🙏"];
+
+let myPlate = "";
+let activeTab = "inbox";
+let activeCat = Object.keys(MESSAGES)[0];
+let refreshInterval = null;
+
+// ── UTILS ──────────────────────────────────────────
+function formatPlate(raw) {
+  const c = raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if (c.length <= 2) return c;
+  if (c.length <= 5) return c.slice(0,2)+"-"+c.slice(2);
+  return c.slice(0,2)+"-"+c.slice(2,5)+"-"+c.slice(5,7);
+}
+
+function timeAgo(ts) {
+  const d = (Date.now()-ts)/1000;
+  if (d < 60)    return "À l'instant";
+  if (d < 3600)  return `Il y a ${Math.floor(d/60)} min`;
+  if (d < 86400) return `Il y a ${Math.floor(d/3600)} h`;
+  return `Il y a ${Math.floor(d/86400)} j`;
+}
+
+function getInbox(plate) {
+  try { return JSON.parse(localStorage.getItem("klaxon_inbox_"+plate)||"[]"); } catch(e){ return []; }
+}
+function saveInbox(plate, msgs) {
+  localStorage.setItem("klaxon_inbox_"+plate, JSON.stringify(msgs));
+}
+function getSent(plate) {
+  try { return JSON.parse(localStorage.getItem("klaxon_sent_"+plate)||"[]"); } catch(e){ return []; }
+}
+function saveSent(plate, msgs) {
+  localStorage.setItem("klaxon_sent_"+plate, JSON.stringify(msgs));
+}
+
+function showFlash(text, type="success") {
+  const el = document.getElementById("flash");
+  el.textContent = text;
+  el.className = type;
+  el.style.display = "block";
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display="none", 3000);
+}
+
+// ── LOGIN ──────────────────────────────────────────
+document.getElementById("login-plate").addEventListener("input", function() {
+  const val = this.value;
+  const formatted = val.length >= 4 ? formatPlate(val) : "_ _  —  _ _ _  —  _ _";
+  document.getElementById("login-preview").textContent = formatted;
+  document.getElementById("login-btn").disabled = val.replace(/[^A-Z0-9]/gi,"").length < 4;
+});
+
+document.getElementById("login-plate").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("login-btn").click();
+});
+
+document.getElementById("login-btn").addEventListener("click", () => {
+  const raw = document.getElementById("login-plate").value;
+  const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if (clean.length < 4) return;
+  myPlate = clean;
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").classList.add("active");
+  document.getElementById("my-plate-display").textContent = formatPlate(myPlate);
+  initApp();
+});
+
+// ── NAV TABS ──────────────────────────────────────
+document.querySelectorAll(".nav-btn").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    this.classList.add("active");
+    activeTab = this.dataset.tab;
+    document.getElementById("tab-"+activeTab).classList.add("active");
+    if (activeTab === "inbox") renderInbox();
+    if (activeTab === "sent")  renderSent();
+  });
+});
+
+// ── TARGET PLATE ──────────────────────────────────
+document.getElementById("target-plate").addEventListener("input", function() {
+  const p = document.getElementById("target-preview");
+  p.textContent = this.value.replace(/[^A-Z0-9]/gi,"").length >= 4 ? formatPlate(this.value) : "";
+});
+
+// ── CATEGORY TABS ─────────────────────────────────
+function renderCatTabs() {
+  const el = document.getElementById("cat-tabs");
+  el.innerHTML = "";
+  Object.keys(MESSAGES).forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = "cat-tab";
+    btn.textContent = cat;
+    btn.style.color = cat === activeCat ? CAT_COLORS[cat] : "#888";
+    btn.style.borderBottomColor = cat === activeCat ? CAT_COLORS[cat] : "transparent";
+    btn.addEventListener("click", () => { activeCat = cat; renderCatTabs(); renderMsgGrid(); });
+    el.appendChild(btn);
+  });
+}
+
+function renderMsgGrid() {
+  const grid = document.getElementById("msg-grid");
+  grid.innerHTML = "";
+  MESSAGES[activeCat].forEach(msg => {
+    const btn = document.createElement("button");
+    btn.className = "msg-btn";
+    btn.style.borderColor = CAT_COLORS[activeCat]+"44";
+    btn.innerHTML = `<span class="msg-btn-icon">${msg.icon}</span><span class="msg-btn-text">${msg.text}</span>`;
+    btn.addEventListener("click", () => sendMessage(msg));
+    grid.appendChild(btn);
+  });
+}
+
+// ── CUSTOM MESSAGE ─────────────────────────────────
+document.getElementById("custom-send").addEventListener("click", sendCustom);
+document.getElementById("custom-msg").addEventListener("keydown", e => {
+  if (e.key === "Enter") sendCustom();
+});
+
+function sendCustom() {
+  const text = document.getElementById("custom-msg").value.trim();
+  if (!text) return;
+  sendMessage({ icon:"💬", text });
+  document.getElementById("custom-msg").value = "";
+}
+
+// ── SEND ──────────────────────────────────────────
+function sendMessage(msgObj) {
+  const raw = document.getElementById("target-plate").value;
+  const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if (clean.length < 4) {
+    showFlash("⚠️ Plaque invalide", "error"); return;
+  }
+
+  const message = {
+    id: Date.now()+Math.random(),
+    from: myPlate,
+    to: clean,
+    category: activeCat,
+    icon: msgObj.icon,
+    text: msgObj.text,
+    ts: Date.now(),
+    read: false,
+    reactions: {},
+  };
+
+  // To recipient inbox
+  const recipientInbox = getInbox(clean);
+  recipientInbox.push(message);
+  saveInbox(clean, recipientInbox);
+
+  // To my sent
+  const mySent = getSent(myPlate);
+  mySent.push({ ...message, read: true });
+  saveSent(myPlate, mySent);
+
+  showFlash(`📨 Envoyé à ${formatPlate(clean)} !`, "success");
+  document.getElementById("target-plate").value = "";
+  document.getElementById("target-preview").textContent = "";
+}
+
+// ── INBOX ─────────────────────────────────────────
+function renderInbox() {
+  const msgs = getInbox(myPlate).sort((a,b) => b.ts-a.ts);
+  const el = document.getElementById("inbox-list");
+  const unread = msgs.filter(m => !m.read).length;
+  const badge = document.getElementById("unread-badge");
+  badge.textContent = unread;
+  badge.style.display = unread > 0 ? "inline" : "none";
+
+  if (!msgs.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div>Aucun message reçu</div><div class="empty-sub">Communiquez votre plaque autour de vous !</div></div>`;
+    return;
+  }
+  el.innerHTML = "";
+  msgs.forEach(msg => {
+    const card = document.createElement("div");
+    card.className = "msg-card";
+    card.style.borderLeftColor = CAT_COLORS[msg.category] || "#ffbb33";
+    card.style.opacity = msg.read ? "0.8" : "1";
+
+    const reactionHtml = REACTIONS.map(emoji => {
+      const count = (msg.reactions && msg.reactions[emoji]) || 0;
+      return `<button class="reaction-btn" data-id="${msg.id}" data-emoji="${emoji}">
+        ${emoji}${count > 0 ? `<span class="reaction-count">${count}</span>` : ""}
+      </button>`;
+    }).join("");
+
+    card.innerHTML = `
+      <div class="msg-top">
+        <div class="msg-from">
+          <span class="from-label">De :</span>
+          <span class="plate-mini">${formatPlate(msg.from)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${!msg.read ? '<span class="unread-dot"></span>' : ""}
+          <span class="msg-time">${timeAgo(msg.ts)}</span>
+        </div>
+      </div>
+      <div class="msg-cat">${msg.category}</div>
+      <div class="msg-text"><span class="msg-icon">${msg.icon}</span>${msg.text}</div>
+      <div class="reactions">${reactionHtml}</div>
+    `;
+
+    // Mark read on click
+    card.addEventListener("click", () => {
+      markRead(msg.id);
+    });
+
+    // Reactions
+    card.querySelectorAll(".reaction-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        addReaction(msg.id, btn.dataset.emoji);
+      });
+    });
+
+    el.appendChild(card);
+  });
+}
+
+function markRead(id) {
+  const msgs = getInbox(myPlate).map(m => m.id == id ? { ...m, read: true } : m);
+  saveInbox(myPlate, msgs);
+  renderInbox();
+}
+
+function addReaction(id, emoji) {
+  const msgs = getInbox(myPlate).map(m => {
+    if (m.id != id) return m;
+    const reactions = { ...(m.reactions||{}) };
+    reactions[emoji] = (reactions[emoji]||0)+1;
+    return { ...m, reactions, read: true };
+  });
+  saveInbox(myPlate, msgs);
+  renderInbox();
+}
+
+// ── SENT ──────────────────────────────────────────
+function renderSent() {
+  const msgs = getSent(myPlate).sort((a,b) => b.ts-a.ts);
+  const el = document.getElementById("sent-list");
+  if (!msgs.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📤</div><div>Aucun message envoyé</div></div>`;
+    return;
+  }
+  el.innerHTML = "";
+  msgs.forEach(msg => {
+    const card = document.createElement("div");
+    card.className = "msg-card";
+    card.style.borderLeftColor = CAT_COLORS[msg.category] || "#ffbb33";
+    card.innerHTML = `
+      <div class="msg-top">
+        <div class="msg-from">
+          <span class="from-label">À :</span>
+          <span class="plate-mini">${formatPlate(msg.to)}</span>
+        </div>
+        <span class="msg-time">${timeAgo(msg.ts)}</span>
+      </div>
+      <div class="msg-cat">${msg.category}</div>
+      <div class="msg-text"><span class="msg-icon">${msg.icon}</span>${msg.text}</div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────
+function initApp() {
+  renderCatTabs();
+  renderMsgGrid();
+  renderInbox();
+  clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => {
+    if (activeTab === "inbox") renderInbox();
+  }, 5000);
+}
+</script>
+</body>
+</html>
