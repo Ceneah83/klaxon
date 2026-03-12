@@ -3,616 +3,842 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
-<title>KLAXON — Parle à la route</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>"/>
+<title>KLAXON 📣</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📣</text></svg>"/>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, push, onValue, update, get }
+  import { getDatabase, ref, push, onValue, update, remove, get }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
   const firebaseConfig = {
-    apiKey:            "AIzaSyAUpqgnxQQWmQed8vFNsGK4I7cQ2hKALEw",
-    authDomain:        "klaxon-61bb7.firebaseapp.com",
-    databaseURL:       "https://klaxon-61bb7-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId:         "klaxon-61bb7",
-    storageBucket:     "klaxon-61bb7.firebasestorage.app",
-    messagingSenderId: "914885238563",
-    appId:             "1:914885238563:web:f69ea7e9b9a5aa60d6b696",
+    apiKey:"AIzaSyAUpqgnxQQWmQed8vFNsGK4I7cQ2hKALEw",
+    authDomain:"klaxon-61bb7.firebaseapp.com",
+    databaseURL:"https://klaxon-61bb7-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:"klaxon-61bb7",
+    storageBucket:"klaxon-61bb7.firebasestorage.app",
+    messagingSenderId:"914885238563",
+    appId:"1:914885238563:web:f69ea7e9b9a5aa60d6b696",
   };
-
-  try {
-    const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
-    window._db=db; window._ref=ref; window._push=push;
-    window._onValue=onValue; window._update=update; window._get=get;
+  try{
+    const app=initializeApp(firebaseConfig);const db=getDatabase(app);
+    window._db=db;window._ref=ref;window._push=push;
+    window._onValue=onValue;window._update=update;window._remove=remove;window._get=get;
     window._fbReady=true;
-  } catch(e){ window._fbReady=false; }
+  }catch(e){window._fbReady=false;}
   window.dispatchEvent(new Event("fb-ready"));
 </script>
 
 <style>
+:root{
+  --y:#FFE500;--r:#FF3B30;--n:#1A1A2E;--w:#FFFEF0;
+  --g:#2ECC71;--b:#3B82F6;--o:#FF9500;--pu:#9B59B6;
+  --bd:3px solid #1A1A2E;--sh:4px 4px 0 #1A1A2E;--shl:6px 6px 0 #1A1A2E;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0c0e;color:#e8e0d0;font-family:'Courier New',Courier,monospace;min-height:100vh;display:flex;flex-direction:column}
-button,input{font-family:'Courier New',Courier,monospace}
+body{background:var(--w);color:var(--n);font-family:'Nunito',sans-serif;min-height:100vh;
+  background-image:radial-gradient(circle at 1px 1px, rgba(26,26,46,.06) 1px, transparent 0);
+  background-size:28px 28px;
+}
+button,input,textarea{font-family:'Nunito',sans-serif;cursor:pointer}
 
 /* LOADING */
-#loading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
-.spin{width:44px;height:44px;border:3px solid #1e2229;border-top-color:#ffcc00;border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.ltxt{color:#666;font-size:13px;letter-spacing:.2em}
+#loading{position:fixed;inset:0;background:var(--y);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:1000}
+.load-honk{font-family:'Boogaloo',sans-serif;font-size:80px;color:var(--n);animation:honk .5s ease infinite alternate;line-height:1}
+@keyframes honk{0%{transform:scale(1) rotate(-1deg)}100%{transform:scale(1.06) rotate(1deg)}}
+.load-road{width:240px;height:6px;background:var(--n);border-radius:3px;overflow:hidden;position:relative}
+.load-car{position:absolute;top:-9px;font-size:22px;animation:drive 1s linear infinite}
+@keyframes drive{0%{left:-30px}100%{left:260px}}
+.load-txt{font-weight:700;font-size:15px;letter-spacing:.2em;color:var(--n);opacity:.5;text-transform:uppercase}
 
-/* LOGIN / AUTH */
-#login{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:28px}
-#login.on{display:flex}
-.logo{display:flex;align-items:center;gap:16px}
-.logo-icon{font-size:52px}
-.logo-title{font-size:36px;font-weight:bold;letter-spacing:.3em;color:#ffcc00;text-shadow:0 0 20px #ffcc0066}
-.logo-sub{font-size:13px;color:#888;letter-spacing:.2em;text-transform:uppercase}
+/* ── HOME ── */
+#home{display:none;flex-direction:column;min-height:100vh}
+#home.on{display:flex}
 
-.card{background:#12151a;border:1px solid #2a2d33;border-radius:16px;padding:28px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px}
-.card-title{font-size:13px;color:#aaa;letter-spacing:.1em;text-transform:uppercase;text-align:center}
-.card-sub{font-size:12px;color:#555;text-align:center;line-height:1.6}
+/* TOP BAR */
+.top-bar{display:flex;align-items:center;justify-content:flex-end;padding:12px 16px;gap:10px;position:absolute;top:0;right:0;z-index:5}
+.login-chip{background:var(--n);color:var(--y);border:none;border-radius:50px;padding:8px 18px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);transition:all .15s}
+.login-chip:hover{transform:translate(-1px,-1px);box-shadow:var(--shl)}
+.login-chip.logged{background:var(--g);color:white}
 
-.pw{display:flex;background:#1c1f26;border:2px solid #2e3340;border-radius:10px;overflow:hidden}
-.pflag{padding:0 12px;display:flex;align-items:center;font-size:20px;background:#23272f;border-right:2px solid #2e3340}
-.pi{flex:1;background:transparent;border:none;outline:none;color:#ffcc00;font-size:20px;font-weight:bold;letter-spacing:.2em;padding:12px 16px;text-transform:uppercase;cursor:text}
-.pp{text-align:center;font-size:26px;font-weight:bold;color:#ffcc00;letter-spacing:.15em;padding:6px 0;text-shadow:0 0 12px #ffcc0044;min-height:46px}
+/* HERO */
+.hero{text-align:center;padding:48px 16px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.hero-icon{font-size:clamp(48px,14vw,80px);display:block;margin-bottom:4px;animation:honk .8s ease infinite alternate}
+.hero-title{font-family:'Boogaloo',sans-serif;font-size:clamp(88px,28vw,160px);color:var(--n);line-height:.9;letter-spacing:.03em;
+  text-shadow:7px 7px 0 var(--y), 10px 10px 0 var(--n);
+  animation:titleBounce 3s ease infinite;
+  width:100%;text-align:center;display:block;
+}
+@keyframes titleBounce{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+.hero-sub{font-size:15px;font-weight:700;color:#888;letter-spacing:.15em;text-transform:uppercase;margin-top:12px}
 
-/* PIN pad */
-.pin-display{display:flex;justify-content:center;gap:12px;margin:4px 0}
-.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid #3a3d50;background:transparent;transition:all .2s}
-.pin-dot.filled{background:#ffcc00;border-color:#ffcc00;box-shadow:0 0 8px #ffcc0066}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.pk{background:#1c1f26;border:1px solid #2a2d40;border-radius:12px;padding:16px 8px;font-size:20px;font-weight:bold;color:#e8e0d0;cursor:pointer;transition:all .15s;text-align:center}
-.pk:hover{background:#252840;border-color:#3a3d58}
-.pk:active{transform:scale(.95);background:#2e3250}
-.pk.del{color:#ff6666;font-size:16px}
-.pk.zero{grid-column:2}
+/* PLATE ZONE */
+.home-body{flex:1;padding:0 16px 32px;max-width:560px;width:100%;margin:0 auto}
 
-.pin-hint{font-size:11px;color:#555;text-align:center;letter-spacing:.05em}
-.pin-error{font-size:13px;color:#ff6666;text-align:center;display:none}
+.plate-zone{background:white;border:var(--bd);border-radius:24px;box-shadow:var(--shl);padding:20px;margin-bottom:18px}
+.zone-label{font-family:'Boogaloo',sans-serif;font-size:20px;color:var(--n);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.plate-input-row{display:flex;gap:10px;align-items:stretch}
+.plate-box{flex:1;background:var(--y);border:var(--bd);border-radius:14px;box-shadow:var(--sh);overflow:hidden;display:flex;align-items:center}
+.plate-flag{padding:0 12px;font-size:22px;border-right:var(--bd)}
+.plate-field{flex:1;background:transparent;border:none;outline:none;font-family:'Boogaloo',sans-serif;font-size:26px;color:var(--n);letter-spacing:.2em;padding:13px 14px;text-transform:uppercase;width:100%}
+.plate-field::placeholder{color:rgba(26,26,46,.28)}
+.cam-btn{background:var(--n);color:var(--y);border:var(--bd);border-radius:14px;box-shadow:var(--sh);padding:13px 15px;font-size:22px;flex-shrink:0;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.cam-btn:hover{transform:translate(-2px,-2px);box-shadow:var(--shl)}
+.cam-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--n)}
+.plate-preview-big{text-align:center;font-family:'Boogaloo',sans-serif;font-size:34px;color:var(--n);letter-spacing:.2em;padding:8px 0;min-height:50px}
+
+/* ACTION BUTTONS */
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.action-btn{border:var(--bd);border-radius:14px;box-shadow:var(--sh);padding:13px 10px;font-family:'Boogaloo',sans-serif;font-size:17px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;color:var(--n)}
+.action-btn:hover{transform:translate(-2px,-2px);box-shadow:var(--shl)}
+.action-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--n)}
+.action-btn.send{background:var(--r);color:white;border-color:var(--n)}
+.action-btn.profile{background:var(--pu);color:white;border-color:var(--n)}
+
+/* CATEGORIES */
+.section-title{font-family:'Boogaloo',sans-serif;font-size:22px;color:var(--n);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.cat-tabs{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.cat-tab{background:white;border:var(--bd);border-radius:50px;padding:7px 16px;font-size:13px;font-weight:700;color:var(--n);white-space:nowrap;transition:all .15s;box-shadow:3px 3px 0 var(--n)}
+.cat-tab:hover{transform:translate(-1px,-1px);box-shadow:var(--sh)}
+.cat-tab.on{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--n)}
+.cat-tab[data-cat="rale"].on{background:#FFE0E0;border-color:var(--r);color:var(--r)}
+.cat-tab[data-cat="comp"].on{background:#E0FFE8;border-color:var(--g);color:var(--g)}
+.cat-tab[data-cat="info"].on{background:#FFF5E0;border-color:var(--o);color:var(--o)}
+.msg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.msg-btn{background:white;border:var(--bd);border-radius:16px;box-shadow:var(--sh);padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;transition:all .15s;color:var(--n);position:relative}
+.msg-btn:hover{transform:translate(-2px,-2px);box-shadow:var(--shl)}
+.msg-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--n)}
+.msg-btn-icon{font-size:26px}
+.msg-btn-txt{font-size:12px;font-weight:700;line-height:1.3}
+.msg-btn[data-col="rale"]{border-color:var(--r)}.msg-btn[data-col="rale"]:hover{background:#FFF0F0}
+.msg-btn[data-col="comp"]{border-color:var(--g)}.msg-btn[data-col="comp"]:hover{background:#F0FFF4}
+.msg-btn[data-col="info"]{border-color:var(--o)}.msg-btn[data-col="info"]:hover{background:#FFF8F0}
+/* public toggle */
+.pub-toggle{position:absolute;top:6px;right:6px;font-size:10px;background:var(--y);border:2px solid var(--n);border-radius:20px;padding:2px 6px;font-weight:700;cursor:pointer;z-index:2}
+.msg-btn.public-mode .pub-toggle{background:var(--g);color:white;border-color:var(--g)}
+
+.custom-row{display:flex;gap:10px;margin-bottom:6px}
+.custom-input{flex:1;background:white;border:var(--bd);border-radius:14px;box-shadow:var(--sh);padding:11px 14px;font-size:14px;font-weight:700;color:var(--n);outline:none}
+.custom-input:focus{box-shadow:var(--shl)}
+.custom-send{background:var(--n);color:var(--y);border:var(--bd);border-radius:14px;box-shadow:var(--sh);padding:11px 15px;font-size:20px;transition:all .15s}
+.custom-send:hover{transform:translate(-2px,-2px);box-shadow:var(--shl)}
+.pub-hint{font-size:11px;color:#aaa;font-weight:700;text-align:center;margin-bottom:16px}
+
+/* ── PUBLIC PROFILE ── */
+#profile-modal{position:fixed;inset:0;background:rgba(26,26,46,.7);z-index:600;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+#profile-modal.on{display:flex}
+.profile-sheet{background:var(--w);border:var(--bd);border-radius:24px 24px 0 0;box-shadow:0 -6px 0 var(--n);padding:24px 20px 40px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;animation:slideup .3s ease}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.profile-close{float:right;background:none;border:none;font-size:22px;color:#999;cursor:pointer}
+.profile-plate-big{font-family:'Boogaloo',sans-serif;font-size:36px;background:var(--y);border:var(--bd);border-radius:14px;box-shadow:var(--sh);padding:8px 24px;display:inline-block;letter-spacing:.2em;margin-bottom:16px}
+.rep-bar{display:flex;border:var(--bd);border-radius:14px;overflow:hidden;box-shadow:var(--sh);margin-bottom:20px;height:48px}
+.rep-seg{display:flex;align-items:center;justify-content:center;font-family:'Boogaloo',sans-serif;font-size:15px;font-weight:700;color:white;transition:width .6s ease;min-width:0;overflow:hidden}
+.rep-seg span{white-space:nowrap;padding:0 8px}
+.rep-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.rep-card{background:white;border:var(--bd);border-radius:12px;box-shadow:var(--sh);padding:12px 8px;text-align:center}
+.rep-val{font-family:'Boogaloo',sans-serif;font-size:28px}
+.rep-lbl{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.profile-msgs-title{font-family:'Boogaloo',sans-serif;font-size:20px;color:var(--n);margin-bottom:12px}
+.pub-msg-card{background:white;border:var(--bd);border-radius:14px;box-shadow:var(--sh);padding:12px 14px;margin-bottom:10px}
+.pub-msg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pub-from{font-family:'Boogaloo',sans-serif;font-size:14px;background:var(--y);border:2px solid var(--n);border-radius:8px;padding:2px 10px;letter-spacing:.08em}
+.pub-time{font-size:11px;color:#aaa;font-weight:700}
+.pub-cat{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.pub-txt{font-size:14px;font-weight:700;display:flex;align-items:flex-start;gap:8px}
+.profile-empty{text-align:center;padding:32px;color:#aaa;font-family:'Boogaloo',sans-serif;font-size:20px}
+
+/* ── AUTH MODAL ── */
+#auth-modal{position:fixed;inset:0;background:rgba(26,26,46,.7);z-index:700;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+#auth-modal.on{display:flex}
+.auth-sheet{background:var(--w);border:var(--bd);border-radius:24px 24px 0 0;box-shadow:0 -6px 0 var(--n);padding:24px 20px 40px;width:100%;max-width:480px;animation:slideup .3s ease;position:relative}
+.auth-title{font-family:'Boogaloo',sans-serif;font-size:28px;color:var(--n);margin-bottom:2px}
+.auth-sub{font-size:13px;color:#888;margin-bottom:16px;font-weight:600}
+.auth-plate-show{font-family:'Boogaloo',sans-serif;font-size:18px;background:var(--y);border:var(--bd);border-radius:10px;padding:5px 14px;display:inline-block;margin-bottom:14px;letter-spacing:.1em}
+.pin-display{display:flex;justify-content:center;gap:14px;margin:10px 0 16px}
+.pin-dot{width:20px;height:20px;border-radius:50%;border:3px solid var(--n);background:transparent;transition:all .2s}
+.pin-dot.filled{background:var(--n)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto}
+.pk{background:white;border:var(--bd);border-radius:14px;box-shadow:var(--sh);padding:17px 8px;font-family:'Boogaloo',sans-serif;font-size:24px;color:var(--n);text-align:center;transition:all .15s}
+.pk:hover{transform:translate(-1px,-1px);box-shadow:var(--shl)}
+.pk:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--n)}
+.pk.del{color:var(--r);font-size:18px}.pk.zero{grid-column:2}
+.pin-error{font-size:13px;color:var(--r);text-align:center;font-weight:700;display:none;margin-top:8px}
 .pin-error.on{display:block}
+.pin-hint{font-size:12px;color:#aaa;text-align:center;margin-top:10px;font-weight:600}
+.auth-close{position:absolute;top:16px;right:20px;background:none;border:none;font-size:24px;color:#ccc;cursor:pointer}
 
-.btn-p{background:#ffcc00;color:#000;border:none;border-radius:10px;padding:14px 0;font-size:15px;font-weight:bold;letter-spacing:.1em;transition:opacity .2s;cursor:pointer}
-.btn-p:hover{opacity:.85}.btn-p:disabled{opacity:.3;cursor:not-allowed}
-.btn-link{background:none;border:none;color:#888;font-size:12px;text-decoration:underline;cursor:pointer;padding:0}
+/* ── APP NAV ── */
+#app-nav{display:none;background:var(--y);border-bottom:var(--bd);position:sticky;top:0;z-index:10}
+#app-nav.on{display:block}
+.app-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px}
+.app-logo{font-family:'Boogaloo',sans-serif;font-size:26px;color:var(--n)}
+.app-plate-btn{background:var(--n);color:var(--y);border-radius:8px;padding:5px 12px;font-family:'Boogaloo',sans-serif;font-size:15px;letter-spacing:.08em;border:none;cursor:pointer}
+.app-tabs{display:flex;border-top:var(--bd)}
+.at{flex:1;background:none;border:none;border-right:var(--bd);padding:10px 4px;font-size:11px;font-weight:700;color:var(--n);opacity:.45;position:relative;transition:all .2s;cursor:pointer}
+.at:last-child{border-right:none}
+.at.on{opacity:1;background:rgba(255,229,0,.35)}
+.at .bdg{position:absolute;top:4px;right:6px;background:var(--r);color:white;border-radius:10px;font-size:9px;padding:1px 5px;font-weight:700;border:2px solid var(--n)}
 
-/* STEP indicator */
-.steps{display:flex;align-items:center;gap:8px;justify-content:center}
-.step{width:8px;height:8px;border-radius:50%;background:#2a2d33;transition:all .3s}
-.step.on{background:#ffcc00;width:20px;border-radius:4px}
+/* ── SCREENS ── */
+.screen{display:none;padding:16px;max-width:560px;margin:0 auto}
+.screen.on{display:block}
 
-/* APP */
-#app{display:none;flex-direction:column;min-height:100vh}
-#app.on{display:flex}
-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#0e1116;border-bottom:1px solid #1e2229;position:sticky;top:0;z-index:10}
-.hl{display:flex;align-items:center;gap:10px}
-.ht{font-size:18px;font-weight:bold;letter-spacing:.3em;color:#ffcc00}
-.mpb{display:flex;align-items:center;gap:8px;background:#1c2030;border:2px solid #2e3a52;border-radius:8px;padding:5px 10px;cursor:pointer}
-.mpb span{color:#ffcc00;font-weight:bold;font-size:14px;letter-spacing:.12em}
-.odot{width:8px;height:8px;border-radius:50%;background:#44dd88;box-shadow:0 0 6px #44dd88;display:none;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* INBOX BUBBLES */
+.bubble-card{background:white;border:var(--bd);border-radius:18px;box-shadow:var(--sh);padding:15px;margin-bottom:14px;position:relative}
+.bubble-card.unread{border-color:var(--r);box-shadow:4px 4px 0 var(--r)}
+.bubble-card::after{content:"";position:absolute;left:28px;bottom:-13px;width:18px;height:13px;background:white;border-left:var(--bd);border-bottom:var(--bd);border-radius:0 0 0 10px;clip-path:polygon(0 0,100% 0,0 100%)}
+.bubble-card.unread::after{border-color:var(--r)}
+.b-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.b-from{display:flex;align-items:center;gap:8px}
+.b-plate{font-family:'Boogaloo',sans-serif;font-size:15px;background:var(--y);border:2px solid var(--n);border-radius:8px;padding:2px 10px;letter-spacing:.08em;cursor:pointer}
+.b-plate:hover{background:var(--n);color:var(--y)}
+.b-udot{width:10px;height:10px;border-radius:50%;background:var(--r);border:2px solid var(--n);flex-shrink:0}
+.b-time{font-size:11px;color:#bbb;font-weight:700}
+.b-cat{font-size:11px;font-weight:700;letter-spacing:.05em;margin-bottom:6px;text-transform:uppercase}
+.b-pub{font-size:10px;background:var(--g);color:white;border-radius:20px;padding:1px 7px;font-weight:700;margin-left:6px;vertical-align:middle}
+.b-txt{font-size:14px;font-weight:700;color:var(--n);margin-bottom:10px;display:flex;align-items:flex-start;gap:7px}
+.b-emoji{font-size:20px;flex-shrink:0}
+.b-reacts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rxbtn{background:var(--w);border:2px solid var(--n);border-radius:50px;padding:3px 9px;font-size:14px;display:flex;align-items:center;gap:3px;cursor:pointer;transition:all .15s;font-weight:700}
+.rxbtn:hover{transform:scale(1.08)}
+.rxbtn.myvote{background:var(--y);box-shadow:2px 2px 0 var(--n)}
+.rxn{font-size:11px;color:var(--n)}
+.del-b{margin-left:auto;background:none;border:none;font-size:15px;color:#ddd;cursor:pointer}
+.del-b:hover{color:var(--r)}
 
-nav{display:flex;border-bottom:1px solid #1e2229;background:#0e1116;position:sticky;top:53px;z-index:9}
-.nb{flex:1;background:none;border:none;border-bottom:3px solid transparent;color:#666;padding:12px 4px;font-size:12px;letter-spacing:.03em;transition:all .2s;position:relative;cursor:pointer}
-.nb.on{color:#ffcc00;border-bottom-color:#ffcc00;background:#12151a}
-.bdg{position:absolute;top:6px;right:8px;background:#ff4444;color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:bold}
+/* SENT */
+.sent-card{background:white;border:var(--bd);border-radius:16px;box-shadow:var(--sh);padding:13px 15px;margin-bottom:11px}
+.sent-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px}
+.sent-actions{display:flex;gap:7px;flex-shrink:0}
+.btn-sm{border:2px solid var(--n);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;background:white;cursor:pointer;transition:all .15s}
+.btn-sm:hover{background:var(--n);color:var(--y)}
+.btn-sm.danger:hover{background:var(--r);border-color:var(--r);color:white}
 
-.content{flex:1;padding:16px;max-width:640px;width:100%;margin:0 auto}
-.tc{display:none}.tc.on{display:block}
+/* CONVERSATIONS */
+.conv-item{background:white;border:var(--bd);border-radius:16px;box-shadow:var(--sh);padding:14px 15px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
+.conv-item:hover{transform:translate(-2px,-2px);box-shadow:var(--shl)}
+.conv-plate{font-family:'Boogaloo',sans-serif;font-size:17px;background:var(--y);border:2px solid var(--n);border-radius:8px;padding:3px 12px;letter-spacing:.08em;flex-shrink:0}
+.conv-info{flex:1;min-width:0}
+.conv-last{font-size:13px;color:#666;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-time{font-size:11px;color:#aaa;margin-top:2px;font-weight:600}
 
-/* CARDS */
-.mc{background:#12151a;border:1px solid #1e2229;border-left:4px solid #ffbb33;border-radius:12px;padding:14px 16px;margin-bottom:12px;cursor:pointer}
-.mt{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.mf{display:flex;align-items:center;gap:8px}
-.pm{background:#1c2030;border:1px solid #2e3a52;border-radius:5px;padding:2px 8px;color:#ffcc00;font-size:12px;font-weight:bold;letter-spacing:.1em}
-.fl{color:#888;font-size:11px}
-.ud{width:8px;height:8px;border-radius:50%;background:#ffcc00;box-shadow:0 0 8px #ffcc00;display:inline-block;margin-right:4px}
-.mtime{font-size:11px;color:#555}
-.mcat{font-size:11px;color:#888;margin-bottom:6px}
-.mtxt{font-size:14px;line-height:1.5;color:#ddd;margin-bottom:10px}
-.mi{font-size:18px;margin-right:8px}
-.reacts{display:flex;gap:6px;flex-wrap:wrap}
-.rb{background:#1c2030;border:1px solid #2a2d40;border-radius:20px;padding:3px 9px;font-size:15px;display:flex;align-items:center;gap:4px;cursor:pointer;transition:background .15s}
-.rb:hover{background:#252840}
-.rc{font-size:11px;color:#aaa}
-.empty{text-align:center;padding:60px 20px;color:#555;font-size:14px}
-.ei{font-size:44px;margin-bottom:12px}
-.es{font-size:12px;color:#444;margin-top:8px}
+/* THREAD */
+#thread-view{display:none;flex-direction:column}
+#thread-view.on{display:flex}
+.thread-bar{display:flex;align-items:center;gap:10px;padding:11px 16px;background:var(--y);border-bottom:var(--bd);position:sticky;top:100px;z-index:8}
+.thread-back{background:none;border:none;font-size:22px;font-family:'Boogaloo',sans-serif;color:var(--n);cursor:pointer}
+.thread-with{font-family:'Boogaloo',sans-serif;font-size:20px;color:var(--n)}
+.thread-msgs{padding:12px 16px;display:flex;flex-direction:column;gap:10px;max-width:560px;margin:0 auto;width:100%}
+.tbub{max-width:78%;padding:11px 15px;border:var(--bd);border-radius:16px;font-size:14px;font-weight:700}
+.tbub.me{align-self:flex-end;background:var(--y);border-radius:16px 16px 4px 16px;box-shadow:var(--sh)}
+.tbub.them{align-self:flex-start;background:white;border-radius:16px 16px 16px 4px;box-shadow:var(--sh)}
+.tbub-time{font-size:10px;color:#999;margin-top:4px;text-align:right}
+.tbub.them .tbub-time{text-align:left}
+.tbub-del{float:right;background:none;border:none;font-size:11px;color:#ccc;cursor:pointer;margin-left:8px}
+.tbub-del:hover{color:var(--r)}
+.thread-footer{padding:11px 16px;background:var(--w);border-top:var(--bd);display:flex;gap:10px;position:sticky;bottom:0;max-width:560px;margin:0 auto;width:100%}
+.thread-footer input{flex:1;background:white;border:var(--bd);border-radius:12px;box-shadow:var(--sh);padding:11px 14px;font-size:14px;font-weight:700;outline:none}
+.thread-footer button{background:var(--n);color:var(--y);border:var(--bd);border-radius:12px;box-shadow:var(--sh);padding:11px 15px;font-size:18px}
 
-/* SEND */
-.sl{font-size:11px;color:#666;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px}
-.tw{margin-bottom:20px}
-.ctabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid #1e2229}
-.ctab{background:none;border:none;border-bottom:3px solid transparent;padding:10px 10px;font-size:12px;color:#888;transition:all .2s;margin-bottom:-1px;white-space:nowrap;cursor:pointer}
-.mgrid{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
-.mbtn{background:#12151a;border:1px solid #2a2d33;border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:12px;text-align:left;transition:all .15s;color:#ddd;cursor:pointer;width:100%}
-.mbtn:hover{background:#1a1e26}
-.mbi{font-size:20px;flex-shrink:0}.mbt{font-size:13px;line-height:1.4}
-.cw{margin-top:4px}.cr{display:flex;gap:10px}
-.ci{flex:1;background:#12151a;border:1px solid #2e3340;border-radius:10px;color:#e8e0d0;font-size:14px;padding:11px 14px;outline:none}
-.ci:focus{border-color:#ffcc0066}
-.bs{background:#ffcc00;color:#000;border:none;border-radius:10px;padding:11px 16px;font-size:18px;font-weight:bold;transition:opacity .2s;cursor:pointer}
-.bs:hover{opacity:.85}
-
-/* SCORE */
-.score-header{background:#12151a;border:1px solid #1e2229;border-radius:16px;padding:24px;margin-bottom:16px;text-align:center}
-.score-plate-big{font-size:20px;font-weight:bold;color:#ffcc00;letter-spacing:.15em;margin-bottom:16px}
-.score-circle{width:110px;height:110px;border-radius:50%;margin:0 auto 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:4px solid}
-.score-number{font-size:34px;font-weight:bold;line-height:1}
-.score-pts{font-size:10px;letter-spacing:.1em;margin-top:2px;opacity:.7}
-.score-medal{font-size:26px;margin-bottom:6px}
-.score-level{font-size:14px;font-weight:bold;letter-spacing:.05em}
-.score-bar-wrap{background:#1a1e26;border-radius:20px;height:7px;margin:14px 0 6px;overflow:hidden}
-.score-bar{height:100%;border-radius:20px;transition:width 1s ease}
-.score-bar-label{display:flex;justify-content:space-between;font-size:10px;color:#555}
-.score-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
-.stat-card{background:#0e1116;border:1px solid #1e2229;border-radius:12px;padding:12px 8px;text-align:center}
-.stat-icon{font-size:20px;margin-bottom:4px}
-.stat-val{font-size:20px;font-weight:bold}
-.stat-lbl{font-size:10px;color:#666;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
-.score-history{margin-top:16px}
-.sh-title{font-size:11px;color:#666;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}
-.sh-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#0e1116;border-radius:10px;margin-bottom:7px;border:1px solid #1e2229}
-.sh-delta{font-size:13px;font-weight:bold;min-width:36px;text-align:right}
-.sh-txt{font-size:12px;color:#aaa;flex:1}
-.sh-time{font-size:10px;color:#555}
-
-/* SECURITY BADGE */
-.sec-badge{display:flex;align-items:center;gap:6px;background:#0e1a0e;border:1px solid #1e3a1e;border-radius:8px;padding:6px 12px;font-size:11px;color:#44dd88}
+/* CAMERA */
+#cam-modal{position:fixed;inset:0;background:rgba(26,26,46,.9);z-index:800;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#cam-modal.on{display:flex}
+#cam-video{width:90%;max-width:500px;border:var(--bd);border-radius:16px;box-shadow:var(--shl);background:black;max-height:50vh;object-fit:cover}
+.cam-frame-rel{position:relative;width:90%;max-width:500px}
+.cam-guide{position:absolute;inset:18%;border:3px dashed var(--y);border-radius:8px;pointer-events:none;animation:blink 1s ease infinite alternate}
+@keyframes blink{0%{opacity:.4}100%{opacity:1}}
+#cam-canvas{display:none}
+.cam-btns{display:flex;gap:12px}
+.cam-snap{background:var(--y);border:var(--bd);border-radius:50px;padding:13px 28px;font-family:'Boogaloo',sans-serif;font-size:20px;color:var(--n);box-shadow:var(--shl)}
+.cam-cancel{background:white;border:var(--bd);border-radius:50px;padding:13px 20px;font-family:'Boogaloo',sans-serif;font-size:18px;color:var(--n);box-shadow:var(--sh)}
+.cam-proc{color:var(--y);font-family:'Boogaloo',sans-serif;font-size:22px;display:none}
+.cam-proc.on{display:block}
 
 /* FLASH */
-#flash{position:fixed;top:64px;left:50%;transform:translateX(-50%);border-radius:10px;padding:11px 22px;font-size:13px;z-index:100;white-space:nowrap;display:none;border:1px solid}
-#flash.s{background:#1a3a1a;border-color:#44dd88;color:#44dd88}
-#flash.e{background:#3a1a1a;border-color:#ff4444;color:#ff4444}
-#flash.i{background:#1a2a3a;border-color:#4488ff;color:#88bbff}
+#flash{position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:999;display:none;pointer-events:none}
+.fi{font-family:'Boogaloo',sans-serif;font-size:20px;padding:11px 26px;border:var(--bd);border-radius:50px;box-shadow:var(--shl);white-space:nowrap;animation:popin .25s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes popin{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.fi.s{background:var(--g);color:white}.fi.e{background:var(--r);color:white}.fi.i{background:var(--b);color:white}
 
-@media(max-width:480px){.logo-title{font-size:28px}.ctab{font-size:11px;padding:10px 7px}.nb{font-size:11px}}
+/* EMPTY */
+.empty-s{text-align:center;padding:48px 20px}
+.empty-i{font-size:54px;margin-bottom:10px}
+.empty-t{font-family:'Boogaloo',sans-serif;font-size:22px;color:var(--n);margin-bottom:4px}
+.empty-u{font-size:13px;color:#bbb;font-weight:600}
+
+@media(max-width:380px){.msg-grid{grid-template-columns:1fr}.plate-field{font-size:21px}.hero-title{font-size:68px}}
 </style>
 </head>
 <body>
 
+<!-- LOADING -->
 <div id="loading">
-  <div style="font-size:52px">📡</div>
-  <div class="spin"></div>
-  <div class="ltxt">CONNEXION EN COURS...</div>
+  <span class="load-honk">📣</span>
+  <div style="font-family:'Boogaloo',sans-serif;font-size:72px;color:var(--n);line-height:1;animation:honk .5s ease infinite alternate">KLAXON</div>
+  <div class="load-road"><div class="load-car">🚗</div></div>
+  <div class="load-txt">Chargement...</div>
 </div>
 
-<!-- LOGIN FLOW -->
-<div id="login">
-  <div class="logo">
-    <span class="logo-icon">📡</span>
-    <div>
-      <div class="logo-title">KLAXON</div>
-      <div class="logo-sub">Parle à la route</div>
-    </div>
+<!-- HOME -->
+<div id="home">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <button class="login-chip" id="header-login-btn">🔐 Se connecter</button>
   </div>
 
-  <!-- STEP 1: plaque -->
-  <div class="card" id="step-plate">
-    <div class="steps"><div class="step on" id="s1"></div><div class="step" id="s2"></div></div>
-    <div class="card-title">Votre plaque d'immatriculation</div>
-    <div class="pw"><div class="pflag">🇫🇷</div><input class="pi" id="lp" placeholder="AB-123-CD" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
-    <div class="pp" id="lprev">_ _  —  _ _ _  —  _ _</div>
-    <button class="btn-p" id="lbtn" disabled>Continuer →</button>
-    <div class="card-sub">Votre plaque = votre identifiant unique</div>
+  <!-- HERO -->
+  <div class="hero">
+    <span class="hero-icon">📣</span>
+    <div class="hero-title">KLAXON</div>
+    <div class="hero-sub">Parle à la route</div>
   </div>
 
-  <!-- STEP 2: PIN -->
-  <div class="card" id="step-pin" style="display:none">
-    <div class="steps"><div class="step" id="s1b"></div><div class="step on" id="s2b"></div></div>
-    <div class="card-title" id="pin-title">Créer votre code PIN</div>
-    <div class="card-sub" id="pin-sub">Ce PIN protège votre plaque. Personne ne pourra envoyer en votre nom sans lui.</div>
-    <div class="sec-badge" style="justify-content:center">🔐 Plaque sécurisée par PIN personnel</div>
-    <div class="pin-display">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
-    </div>
-    <div class="pin-error" id="pin-error">❌ Code incorrect, réessayez</div>
-    <div class="pin-pad">
-      <button class="pk" data-v="1">1</button>
-      <button class="pk" data-v="2">2</button>
-      <button class="pk" data-v="3">3</button>
-      <button class="pk" data-v="4">4</button>
-      <button class="pk" data-v="5">5</button>
-      <button class="pk" data-v="6">6</button>
-      <button class="pk" data-v="7">7</button>
-      <button class="pk" data-v="8">8</button>
-      <button class="pk" data-v="9">9</button>
-      <button class="pk zero" data-v="0">0</button>
-      <button class="pk del" data-v="del">⌫</button>
-    </div>
-    <div class="pin-hint" id="pin-hint">4 chiffres — mémorisez-le bien !</div>
-    <button class="btn-link" id="back-btn">← Changer de plaque</button>
-  </div>
-</div>
+  <div class="home-body">
 
-<!-- APP -->
-<div id="app">
-  <header>
-    <div class="hl">
-      <span style="font-size:20px">📡</span>
-      <span class="ht">KLAXON</span>
-      <span class="odot" id="odot"></span>
-    </div>
-    <div class="mpb" id="logout-btn" title="Se déconnecter">
-      <span>🔐</span><span id="mpd"></span>
-    </div>
-  </header>
-  <nav>
-    <button class="nb on" data-tab="inbox">📥 Reçus<span class="bdg" id="ubdg" style="display:none"></span></button>
-    <button class="nb" data-tab="send">📤 Envoyer</button>
-    <button class="nb" data-tab="sent">📨 Envoyés</button>
-    <button class="nb" data-tab="score">⭐ Score</button>
-  </nav>
-  <div class="content">
-    <div class="tc on" id="tab-inbox"><div id="inbox-list"></div></div>
-
-    <div class="tc" id="tab-send">
-      <div class="sec-badge" style="margin-bottom:16px">🔐 Envoi signé — plaque <span id="send-plate-badge"></span></div>
-      <div class="tw">
-        <div class="sl">Plaque cible</div>
-        <div class="pw"><div class="pflag">🇫🇷</div><input class="pi" id="tp" placeholder="AB-123-CD" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
-        <div class="pp" id="tprev" style="font-size:20px;min-height:38px;padding:4px 0"></div>
-      </div>
-      <div class="ctabs" id="ctabs"></div>
-      <div class="mgrid" id="mgrid"></div>
-      <div class="cw">
-        <div class="sl">Message personnalisé</div>
-        <div class="cr">
-          <input class="ci" id="cm" placeholder="Écrire un message libre..." maxlength="120"/>
-          <button class="bs" id="cs">📤</button>
+    <!-- PLATE ZONE -->
+    <div class="plate-zone">
+      <div class="zone-label">🎯 Quelle plaque ?</div>
+      <div class="plate-input-row">
+        <div class="plate-box">
+          <span class="plate-flag">🇫🇷</span>
+          <input class="plate-field" id="target-plate" placeholder="AB-123-CD" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false"/>
         </div>
+        <button class="cam-btn" id="cam-open-btn" title="Photo 📷">📷</button>
+      </div>
+      <div class="plate-preview-big" id="target-preview"></div>
+      <div class="action-row" id="action-row" style="display:none">
+        <button class="action-btn send" id="action-send-btn">📤 Envoyer</button>
+        <button class="action-btn profile" id="action-profile-btn">👁 Réputation</button>
       </div>
     </div>
 
-    <div class="tc" id="tab-sent"><div id="sent-list"></div></div>
-    <div class="tc" id="tab-score"><div id="score-view"></div></div>
+    <!-- MESSAGES -->
+    <div class="section-title">💬 Que veux-tu dire ?</div>
+    <div class="cat-tabs" id="cat-tabs-home"></div>
+    <div class="msg-grid" id="msg-grid-home"></div>
+    <div class="custom-row">
+      <input class="custom-input" id="custom-msg-home" placeholder="Message libre..." maxlength="120"/>
+      <button class="custom-send" id="custom-send-home">📤</button>
+    </div>
+    <div class="pub-hint" id="pub-hint">🔒 Messages privés par défaut — cliquer sur 🔒 pour rendre public</div>
   </div>
 </div>
 
-<div id="flash"></div>
+<!-- APP NAV (connecté) -->
+<div id="app-nav">
+  <div class="app-bar">
+    <div class="app-logo">📣 KLAXON</div>
+    <button class="app-plate-btn" id="logout-btn">🔐 <span id="my-plate-display"></span></button>
+  </div>
+  <div class="app-tabs">
+    <button class="at on" data-screen="home-screen">🏠 Envoyer</button>
+    <button class="at" data-screen="inbox-screen">📥 Reçus<span class="bdg" id="ubdg" style="display:none"></span></button>
+    <button class="at" data-screen="convs-screen">💬 Convos</button>
+    <button class="at" data-screen="sent-screen">🗑 Envoyés</button>
+  </div>
+</div>
+
+<!-- SCREENS -->
+<div class="screen on" id="home-screen"></div>
+<div class="screen" id="inbox-screen"><div id="inbox-list"></div></div>
+<div class="screen" id="convs-screen">
+  <div id="conv-list-wrap"><div id="conv-list"></div></div>
+  <div id="thread-view">
+    <div class="thread-bar">
+      <button class="thread-back" id="thread-back">←</button>
+      <span style="font-size:13px;color:#666;font-weight:700">Avec</span>
+      <span class="thread-with" id="thread-plate-label"></span>
+    </div>
+    <div class="thread-msgs" id="thread-msgs"></div>
+    <div class="thread-footer">
+      <input id="thread-input" placeholder="Votre message..." maxlength="200"/>
+      <button id="thread-send">📤</button>
+    </div>
+  </div>
+</div>
+<div class="screen" id="sent-screen"><div id="sent-list"></div></div>
+
+<!-- PUBLIC PROFILE MODAL -->
+<div id="profile-modal">
+  <div class="profile-sheet">
+    <button class="profile-close" id="profile-close">✕</button>
+    <div style="margin-bottom:12px">
+      <span class="profile-plate-big" id="profile-plate-big"></span>
+    </div>
+    <div id="profile-rep-bar" class="rep-bar"></div>
+    <div class="rep-counts" id="profile-counts"></div>
+    <div class="profile-msgs-title">📣 Messages publics</div>
+    <div id="profile-msgs-list"></div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="auth-modal">
+  <div class="auth-sheet">
+    <button class="auth-close" id="auth-close">✕</button>
+    <div class="auth-title" id="auth-title">Se connecter 🔐</div>
+    <div class="auth-sub" id="auth-sub">Pour envoyer en votre nom</div>
+    <div><span class="auth-plate-show" id="auth-plate-show"></span></div>
+    <div class="pin-display">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-error" id="pin-error">❌ Code incorrect !</div>
+    <div class="pin-pad">
+      <button class="pk" data-v="1">1</button><button class="pk" data-v="2">2</button><button class="pk" data-v="3">3</button>
+      <button class="pk" data-v="4">4</button><button class="pk" data-v="5">5</button><button class="pk" data-v="6">6</button>
+      <button class="pk" data-v="7">7</button><button class="pk" data-v="8">8</button><button class="pk" data-v="9">9</button>
+      <button class="pk zero" data-v="0">0</button><button class="pk del" data-v="del">⌫</button>
+    </div>
+    <div class="pin-hint" id="pin-hint">PIN à 4 chiffres</div>
+  </div>
+</div>
+
+<!-- CAMERA -->
+<div id="cam-modal">
+  <div class="cam-frame-rel">
+    <video id="cam-video" autoplay playsinline></video>
+    <div class="cam-guide"></div>
+  </div>
+  <canvas id="cam-canvas"></canvas>
+  <div class="cam-proc" id="cam-proc">🔍 Lecture en cours...</div>
+  <div class="cam-btns" id="cam-btns">
+    <button class="cam-snap" id="cam-snap">📸 Capturer</button>
+    <button class="cam-cancel" id="cam-cancel">✕ Annuler</button>
+  </div>
+</div>
+
+<div id="flash"><div class="fi" id="fi"></div></div>
 
 <script>
 const MSGS={
-  "😤 Râler":[
+  rale:{color:"#FF3B30",label:"😤 Râler",items:[
     {icon:"🚨",text:"Tu m'as failli percuter !"},
     {icon:"📵",text:"Tu étais sur ton téléphone !"},
-    {icon:"🐌",text:"Tu roulais trop lentement sur la voie rapide"},
-    {icon:"🔦",text:"Tes phares en pleine face, ça aveugle !"},
+    {icon:"🐌",text:"Trop lent sur la voie rapide"},
+    {icon:"🔦",text:"Tes phares m'aveuglent !"},
     {icon:"🚦",text:"Tu n'as pas respecté la priorité"},
     {icon:"📍",text:"Tu as failli me couper la route"},
     {icon:"🚫",text:"Stop au stationnement en double file !"},
-    {icon:"🔊",text:"Ton klaxon intempestif, merci non"},
-  ],
-  "😊 Complimenter":[
+    {icon:"🔊",text:"Klaxon intempestif, merci non"},
+  ]},
+  comp:{color:"#2ECC71",label:"😊 Complimenter",items:[
     {icon:"👏",text:"Merci pour ta courtoisie !"},
     {icon:"🙏",text:"Merci de m'avoir laissé passer"},
     {icon:"⭐",text:"Excellent conducteur, bravo !"},
     {icon:"🤝",text:"Super sympa de t'être arrêté"},
-    {icon:"💯",text:"Conduite exemplaire, continue ainsi"},
-  ],
-  "💡 Informer":[
+    {icon:"💯",text:"Conduite exemplaire !"},
+  ]},
+  info:{color:"#FF9500",label:"💡 Informer",items:[
     {icon:"🔴",text:"Un de tes feux arrière est cassé"},
     {icon:"💨",text:"Ton pneu semble à plat !"},
     {icon:"🚪",text:"Ta portière n'est pas bien fermée"},
     {icon:"⛽",text:"Quelque chose coule sous ta voiture"},
     {icon:"🎒",text:"Tu as oublié quelque chose sur le toit !"},
     {icon:"🔓",text:"Tu as oublié de fermer ton réservoir"},
-  ],
+  ]},
 };
-const CC={"😤 Râler":"#ff4444","😊 Complimenter":"#44dd88","💡 Informer":"#ffbb33"};
 const RX=["👍","😂","😡","❤️","😱","🙏"];
-const LEVELS=[
-  {min:100,medal:"🏆",label:"Conducteur d'élite",   color:"#ffcc00"},
-  {min:50, medal:"⭐",label:"Excellent conducteur",  color:"#44dd88"},
-  {min:20, medal:"👍",label:"Bon conducteur",        color:"#4488ff"},
-  {min:0,  medal:"😐",label:"Conducteur neutre",     color:"#888888"},
-  {min:-999,medal:"⚠️",label:"Conduite à risquer",   color:"#ff4444"},
-];
 
-let myPlate="", activeTab="inbox", activeCat=Object.keys(MSGS)[0], useFb=false;
-let pinBuffer="", pinMode=""; // "create" or "verify"
+let myPlate="",isLoggedIn=false,useFb=false;
+let pinBuffer="",pinMode="";
+let activeCat="rale",activeScreen="home-screen";
+let currentConvPlate="",convUnsub=null;
+let pendingSendObj=null;
+let selectedMsgPublic=false; // is the next send public?
 
-// ── UTILS ──
 const fp=r=>{const c=r.toUpperCase().replace(/[^A-Z0-9]/g,"");if(c.length<=2)return c;if(c.length<=5)return c.slice(0,2)+"-"+c.slice(2);return c.slice(0,2)+"-"+c.slice(2,5)+"-"+c.slice(5,7);};
-const ta=ts=>{const d=(Date.now()-ts)/1000;if(d<60)return"À l'instant";if(d<3600)return`Il y a ${Math.floor(d/60)} min`;if(d<86400)return`Il y a ${Math.floor(d/3600)} h`;return`Il y a ${Math.floor(d/86400)} j`;};
-const flash=(t,c="s")=>{const e=document.getElementById("flash");e.textContent=t;e.className=c;e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",3000);};
+const ta=ts=>{const d=(Date.now()-ts)/1000;if(d<60)return"À l'instant";if(d<3600)return`${Math.floor(d/60)}min`;if(d<86400)return`${Math.floor(d/3600)}h`;return`${Math.floor(d/86400)}j`;};
+const flash=(t,c="s")=>{const fi=document.getElementById("fi");fi.textContent=t;fi.className="fi "+c;const f=document.getElementById("flash");f.style.display="block";clearTimeout(f._t);f._t=setTimeout(()=>f.style.display="none",2500);};
 const gl=k=>{try{return JSON.parse(localStorage.getItem(k)||"[]")}catch(e){return[]}};
 const gv=k=>localStorage.getItem(k);
 const sv=(k,v)=>localStorage.setItem(k,v);
 const sloc=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const convKey=(a,b)=>[a,b].sort().join("__");
 
-// ── HASH PIN (simple, stocké localement) ──
-async function hashPin(pin,plate){
-  const data=new TextEncoder().encode(pin+plate+"klaxon2024");
-  const buf=await crypto.subtle.digest("SHA-256",data);
+// Firebase
+const fbSend=async msg=>window._push(window._ref(window._db,`kx/${msg.to}`),msg);
+const fbSendPub=async msg=>window._push(window._ref(window._db,`pub/${msg.to}`),msg);
+const fbRead=async(pl,id)=>window._update(window._ref(window._db,`kx/${pl}/${id}`),{read:true});
+const fbDel=async(pl,id)=>window._remove(window._ref(window._db,`kx/${pl}/${id}`));
+const fbReact=async(pl,id,emoji,prev,myPl)=>{
+  const u={[`reactions/${emoji}`]:(prev[emoji]||0)+1,[`_myVote_${myPl}`]:emoji,read:true};
+  if(prev._myVote&&prev._myVote!==emoji)u[`reactions/${prev._myVote}`]=Math.max(0,(prev[prev._myVote]||1)-1);
+  return window._update(window._ref(window._db,`kx/${pl}/${id}`),u);
+};
+const fbListen=(pl,cb)=>window._onValue(window._ref(window._db,`kx/${pl}`),snap=>{
+  const d=snap.val()||{};cb(Object.entries(d).map(([id,m])=>({...m,id})).sort((a,b)=>b.ts-a.ts));
+});
+const fbGetPubMsgs=async plate=>{
+  const snap=await window._get(window._ref(window._db,`pub/${plate}`));
+  const d=snap.val()||{};
+  return Object.values(d).sort((a,b)=>b.ts-a.ts);
+};
+const fbGetPin=async p=>{const s=await window._get(window._ref(window._db,`pins/${p}`));return s.val();};
+const fbSetPin=async(p,h)=>window._update(window._ref(window._db,"pins"),{[p]:h});
+const fbSendConv=async(key,msg)=>window._push(window._ref(window._db,`convs/${key}`),msg);
+const fbListenConv=(key,cb)=>window._onValue(window._ref(window._db,`convs/${key}`),snap=>{
+  const d=snap.val()||{};cb(Object.entries(d).map(([id,m])=>({...m,id})).sort((a,b)=>a.ts-b.ts));
+});
+const fbDelConv=async(key,id)=>window._remove(window._ref(window._db,`convs/${key}/${id}`));
+
+async function hashPin(pin,pl){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pin+pl+"klaxon2024"));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,16);
 }
 
-// ── FIREBASE ──
-const fbSend=async msg=>window._push(window._ref(window._db,`kx/${msg.to}`),msg);
-const fbRead=async(plate,id)=>window._update(window._ref(window._db,`kx/${plate}/${id}`),{read:true});
-const fbReact=async(plate,id,emoji,n)=>window._update(window._ref(window._db,`kx/${plate}/${id}`),{[`reactions/${emoji}`]:n+1,read:true});
-const fbListen=(plate,cb)=>window._onValue(window._ref(window._db,`kx/${plate}`),snap=>{
-  const d=snap.val()||{};
-  cb(Object.entries(d).map(([id,m])=>({...m,id})).sort((a,b)=>b.ts-a.ts));
-});
-// Store PIN hash in Firebase so same plate = same PIN across devices
-const fbGetPin=async plate=>{
-  const snap=await window._get(window._ref(window._db,`pins/${plate}`));
-  return snap.val();
-};
-const fbSetPin=async(plate,hash)=>window._update(window._ref(window._db,`pins`),{[plate]:hash});
-
-// ── LOGIN STEP 1 ──
-document.getElementById("lp").addEventListener("input",function(){
+// ── TARGET PLATE ──
+document.getElementById("target-plate").addEventListener("input",function(){
   const c=this.value.replace(/[^A-Z0-9]/gi,"");
-  document.getElementById("lprev").textContent=c.length>=4?fp(this.value):"_ _  —  _ _ _  —  _ _";
-  document.getElementById("lbtn").disabled=c.length<4;
+  const formatted=c.length>=4?fp(this.value):"";
+  document.getElementById("target-preview").textContent=formatted;
+  const row=document.getElementById("action-row");
+  row.style.display=c.length>=4?"grid":"none";
 });
-document.getElementById("lp").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("lbtn").click();});
-document.getElementById("lbtn").addEventListener("click",async()=>{
-  const c=document.getElementById("lp").value.toUpperCase().replace(/[^A-Z0-9]/g,"");
-  if(c.length<4)return;
-  myPlate=c;
-  // Check if PIN exists for this plate
-  let hasPin=false;
-  if(useFb){
-    try{const existing=await fbGetPin(c);hasPin=!!existing;}catch(e){}
-  } else {
-    hasPin=!!gv("kpin_"+c);
-  }
-  showPinStep(hasPin?"verify":"create");
+document.getElementById("action-send-btn").addEventListener("click",()=>{
+  const raw=document.getElementById("target-plate").value;
+  const clean=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+  document.getElementById("msg-grid-home").scrollIntoView({behavior:"smooth",block:"nearest"});
+  flash("👆 Choisis un message ci-dessous !","i");
 });
-document.getElementById("back-btn").addEventListener("click",()=>{
-  document.getElementById("step-pin").style.display="none";
-  document.getElementById("step-plate").style.display="flex";
-  pinBuffer=""; updatePinDots();
+document.getElementById("action-profile-btn").addEventListener("click",()=>{
+  const raw=document.getElementById("target-plate").value;
+  const clean=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(clean.length>=4)openProfile(clean);
 });
 
-// ── PIN STEP ──
-function showPinStep(mode){
-  pinMode=mode; pinBuffer="";
-  document.getElementById("step-plate").style.display="none";
-  document.getElementById("step-pin").style.display="flex";
-  document.getElementById("pin-title").textContent=mode==="create"?"Créer votre code PIN":"Entrer votre code PIN";
-  document.getElementById("pin-sub").textContent=mode==="create"
-    ?"Ce PIN protège votre plaque. Personne ne pourra envoyer en votre nom sans lui."
-    :"Entrez votre PIN pour accéder à votre compte.";
-  document.getElementById("pin-hint").textContent=mode==="create"?"4 chiffres — mémorisez-le bien !":"Votre PIN à 4 chiffres";
-  document.getElementById("pin-error").classList.remove("on");
-  updatePinDots();
-}
-
-document.querySelectorAll(".pk").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    const v=btn.dataset.v;
-    if(v==="del"){pinBuffer=pinBuffer.slice(0,-1);}
-    else if(pinBuffer.length<4){pinBuffer+=v;}
-    updatePinDots();
-    if(pinBuffer.length===4) setTimeout(submitPin,200);
+// ── BUILD HOME ──
+function buildHomeGrid(){
+  const tabsEl=document.getElementById("cat-tabs-home");tabsEl.innerHTML="";
+  Object.entries(MSGS).forEach(([key,cat])=>{
+    const b=document.createElement("button");b.className="cat-tab"+(activeCat===key?" on":"");
+    b.dataset.cat=key;b.textContent=cat.label;
+    b.addEventListener("click",()=>{activeCat=key;buildHomeGrid();});
+    tabsEl.appendChild(b);
   });
-});
-
-function updatePinDots(){
-  for(let i=0;i<4;i++){
-    const d=document.getElementById("pd"+i);
-    d.classList.toggle("filled",i<pinBuffer.length);
-  }
+  const gridEl=document.getElementById("msg-grid-home");gridEl.innerHTML="";
+  MSGS[activeCat].items.forEach(msg=>{
+    const b=document.createElement("button");b.className="msg-btn";b.dataset.col=activeCat;
+    let isPublic=false;
+    b.innerHTML=`<span class="msg-btn-icon">${msg.icon}</span><span class="msg-btn-txt">${msg.text}</span><span class="pub-toggle" title="Rendre public/privé">🔒</span>`;
+    // toggle public
+    b.querySelector(".pub-toggle").addEventListener("click",e=>{
+      e.stopPropagation();isPublic=!isPublic;
+      b.classList.toggle("public-mode",isPublic);
+      b.querySelector(".pub-toggle").textContent=isPublic?"🌍":"🔒";
+    });
+    b.addEventListener("click",()=>triggerSend({...msg,category:MSGS[activeCat].label,isPublic}));
+    gridEl.appendChild(b);
+  });
 }
-
-async function submitPin(){
-  const hash=await hashPin(pinBuffer,myPlate);
-  if(pinMode==="create"){
-    // Save hash
-    if(useFb){try{await fbSetPin(myPlate,hash);}catch(e){}}
-    sv("kpin_"+myPlate,hash);
-    enterApp();
-  } else {
-    // Verify
-    let stored=null;
-    if(useFb){try{stored=await fbGetPin(myPlate);}catch(e){}}
-    if(!stored) stored=gv("kpin_"+myPlate);
-    if(stored===hash){
-      enterApp();
-    } else {
-      document.getElementById("pin-error").classList.add("on");
-      pinBuffer=""; updatePinDots();
-      setTimeout(()=>document.getElementById("pin-error").classList.remove("on"),2500);
-    }
-  }
-}
-
-// ── ENTER APP ──
-function enterApp(){
-  document.getElementById("login").classList.remove("on");
-  document.getElementById("app").classList.add("on");
-  document.getElementById("mpd").textContent=fp(myPlate);
-  document.getElementById("send-plate-badge").textContent=fp(myPlate);
-  startApp();
-}
-
-// Logout
-document.getElementById("logout-btn").addEventListener("click",()=>{
-  if(!confirm("Se déconnecter ?")) return;
-  myPlate=""; pinBuffer="";
-  document.getElementById("app").classList.remove("on");
-  document.getElementById("login").classList.add("on");
-  document.getElementById("step-plate").style.display="flex";
-  document.getElementById("step-pin").style.display="none";
-  document.getElementById("lp").value="";
-  document.getElementById("lprev").textContent="_ _  —  _ _ _  —  _ _";
-  document.getElementById("lbtn").disabled=true;
-  document.querySelectorAll(".nb").forEach(b=>b.classList.remove("on"));
-  document.querySelectorAll(".tc").forEach(t=>t.classList.remove("on"));
-  document.querySelector("[data-tab='inbox']").classList.add("on");
-  document.getElementById("tab-inbox").classList.add("on");
-  activeTab="inbox";
-});
-
-// ── NAV ──
-document.querySelectorAll(".nb").forEach(b=>b.addEventListener("click",function(){
-  document.querySelectorAll(".nb").forEach(x=>x.classList.remove("on"));
-  document.querySelectorAll(".tc").forEach(x=>x.classList.remove("on"));
-  this.classList.add("on"); activeTab=this.dataset.tab;
-  document.getElementById("tab-"+activeTab).classList.add("on");
-  if(activeTab==="sent") renderSent();
-  if(activeTab==="score") renderScore(window._lastMsgs||[]);
-}));
 
 // ── SEND ──
-document.getElementById("tp").addEventListener("input",function(){
-  const c=this.value.replace(/[^A-Z0-9]/gi,"");
-  document.getElementById("tprev").textContent=c.length>=4?fp(this.value):"";
-});
-document.getElementById("cs").addEventListener("click",sendCustom);
-document.getElementById("cm").addEventListener("keydown",e=>{if(e.key==="Enter")sendCustom();});
-function sendCustom(){const t=document.getElementById("cm").value.trim();if(!t)return;sendMsg({icon:"💬",text:t});document.getElementById("cm").value="";}
-
-async function sendMsg(obj){
-  const raw=document.getElementById("tp").value;
+function triggerSend(msgObj){
+  const raw=document.getElementById("target-plate").value;
   const clean=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
-  if(clean.length<4){flash("⚠️ Plaque invalide","e");return;}
-  const m={id:Date.now()+Math.random(),from:myPlate,to:clean,category:activeCat,icon:obj.icon,text:obj.text,ts:Date.now(),read:false,reactions:{}};
+  if(clean.length<4){flash("⚠️ Saisis d'abord une plaque !","e");document.getElementById("target-plate").focus();return;}
+  pendingSendObj={...msgObj,to:clean};
+  if(isLoggedIn){doSend(pendingSendObj);}else{openAuth(clean);}
+}
+document.getElementById("custom-send-home").addEventListener("click",()=>{
+  const t=document.getElementById("custom-msg-home").value.trim();if(!t)return;
+  triggerSend({icon:"💬",text:t,category:"Message libre",isPublic:false});
+  document.getElementById("custom-msg-home").value="";
+});
+document.getElementById("custom-msg-home").addEventListener("keydown",e=>{if(e.key==="Enter"){const t=e.target.value.trim();if(t){triggerSend({icon:"💬",text:t,category:"Message libre",isPublic:false});e.target.value="";}}});
+
+async function doSend(obj){
+  const m={id:Date.now()+Math.random(),from:myPlate,to:obj.to,category:obj.category,icon:obj.icon,text:obj.text,ts:Date.now(),read:false,reactions:{},isPublic:!!obj.isPublic};
   if(useFb){
     try{
       await fbSend(m);
-      const s=gl("kx_s_"+myPlate);s.unshift({...m,read:true});sloc("kx_s_"+myPlate,s.slice(0,100));
-      flash(`📨 Envoyé à ${fp(clean)} !`,"s");
+      if(obj.isPublic)await fbSendPub(m);
+      const s=gl("kx_s_"+myPlate);s.unshift({...m,read:true});sloc("kx_s_"+myPlate,s.slice(0,200));
+      flash(`📣 Envoyé à ${fp(obj.to)} !`+(obj.isPublic?" 🌍":""),"s");
     }catch(e){flash("❌ Erreur réseau","e");}
-  } else {
-    const inbox=gl("kx_i_"+clean);inbox.unshift(m);sloc("kx_i_"+clean,inbox.slice(0,100));
-    const sent=gl("kx_s_"+myPlate);sent.unshift({...m,read:true});sloc("kx_s_"+myPlate,sent.slice(0,100));
-    flash(`📨 Envoyé (local) à ${fp(clean)} !`,"i");
+  }else{
+    const inbox=gl("kx_i_"+obj.to);inbox.unshift(m);sloc("kx_i_"+obj.to,inbox.slice(0,200));
+    const pub=gl("pub_"+obj.to);if(obj.isPublic){pub.unshift(m);sloc("pub_"+obj.to,pub.slice(0,200));}
+    const sent=gl("kx_s_"+myPlate);sent.unshift({...m,read:true});sloc("kx_s_"+myPlate,sent.slice(0,200));
+    flash(`📣 Envoyé à ${fp(obj.to)} !`+(obj.isPublic?" 🌍":""),"s");
   }
-  document.getElementById("tp").value="";document.getElementById("tprev").textContent="";
+  pendingSendObj=null;
+}
+
+// ── PUBLIC PROFILE ──
+async function openProfile(plate){
+  document.getElementById("profile-plate-big").textContent="🇫🇷 "+fp(plate);
+  document.getElementById("profile-msgs-list").innerHTML=`<div class="empty-s"><div class="empty-i">⏳</div><div class="empty-t">Chargement...</div></div>`;
+  document.getElementById("profile-rep-bar").innerHTML="";
+  document.getElementById("profile-counts").innerHTML="";
+  document.getElementById("profile-modal").classList.add("on");
+
+  let msgs=[];
+  if(useFb){try{msgs=await fbGetPubMsgs(plate);}catch(e){}}
+  else{msgs=gl("pub_"+plate);}
+
+  // Stats
+  const rale=msgs.filter(m=>m.category&&m.category.includes("Râler")).length;
+  const comp=msgs.filter(m=>m.category&&m.category.includes("Complimenter")).length;
+  const info=msgs.filter(m=>m.category&&m.category.includes("Informer")).length;
+  const total=msgs.length||1;
+
+  // Rep bar
+  const bar=document.getElementById("profile-rep-bar");
+  bar.innerHTML=`
+    <div class="rep-seg" style="background:#FF3B30;width:${Math.round(rale/total*100)}%"><span>😤 ${rale}</span></div>
+    <div class="rep-seg" style="background:#2ECC71;width:${Math.round(comp/total*100)}%"><span>😊 ${comp}</span></div>
+    <div class="rep-seg" style="background:#FF9500;width:${Math.round(info/total*100)}%"><span>💡 ${info}</span></div>`;
+
+  document.getElementById("profile-counts").innerHTML=`
+    <div class="rep-card"><div class="rep-val" style="color:#FF3B30">${rale}</div><div class="rep-lbl">Râleries</div></div>
+    <div class="rep-card"><div class="rep-val" style="color:#2ECC71">${comp}</div><div class="rep-lbl">Compliments</div></div>
+    <div class="rep-card"><div class="rep-val" style="color:#FF9500">${info}</div><div class="rep-lbl">Infos</div></div>`;
+
+  const el=document.getElementById("profile-msgs-list");
+  if(!msgs.length){el.innerHTML=`<div class="profile-empty">😶 Aucun message public<br><span style="font-size:14px;font-weight:700;color:#bbb">Soyez le premier à réagir !</span></div>`;return;}
+  el.innerHTML="";
+  msgs.forEach(msg=>{
+    const catColor=Object.values(MSGS).find(c=>c.label===msg.category)?.color||"#999";
+    const c=document.createElement("div");c.className="pub-msg-card";
+    c.innerHTML=`
+      <div class="pub-msg-top">
+        <span class="pub-from">🇫🇷 ${fp(msg.from)}</span>
+        <span class="pub-time">${ta(msg.ts)}</span>
+      </div>
+      <div class="pub-cat" style="color:${catColor}">${msg.category}</div>
+      <div class="pub-txt"><span style="font-size:20px">${msg.icon}</span><span>${msg.text}</span></div>`;
+    el.appendChild(c);
+  });
+}
+document.getElementById("profile-close").addEventListener("click",()=>document.getElementById("profile-modal").classList.remove("on"));
+
+// ── AUTH ──
+async function openAuth(plate){
+  let hasPin=false;
+  if(useFb){try{hasPin=!!(await fbGetPin(plate));}catch(e){}}
+  if(!hasPin)hasPin=!!gv("kpin_"+plate);
+  myPlate=plate;pinMode=hasPin?"verify":"create";
+  pinBuffer="";updatePinDots();
+  document.getElementById("auth-title").textContent=hasPin?"Bon retour ! 🔐":"Créer votre PIN 🔐";
+  document.getElementById("auth-sub").textContent=hasPin?"Entrez votre PIN pour envoyer":"Première fois ? Créez un PIN à 4 chiffres";
+  document.getElementById("auth-plate-show").textContent="🇫🇷 "+fp(plate);
+  document.getElementById("pin-hint").textContent=hasPin?"Votre PIN à 4 chiffres":"Choisissez un PIN — mémorisez-le !";
+  document.getElementById("pin-error").classList.remove("on");
+  document.getElementById("auth-modal").classList.add("on");
+}
+document.getElementById("auth-close").addEventListener("click",()=>{document.getElementById("auth-modal").classList.remove("on");pinBuffer="";updatePinDots();});
+document.querySelectorAll(".pk").forEach(btn=>btn.addEventListener("click",()=>{
+  const v=btn.dataset.v;
+  if(v==="del"){pinBuffer=pinBuffer.slice(0,-1);}else if(pinBuffer.length<4){pinBuffer+=v;}
+  updatePinDots();if(pinBuffer.length===4)setTimeout(submitPin,200);
+}));
+function updatePinDots(){for(let i=0;i<4;i++)document.getElementById("pd"+i).classList.toggle("filled",i<pinBuffer.length);}
+async function submitPin(){
+  const hash=await hashPin(pinBuffer,myPlate);
+  if(pinMode==="create"){
+    if(useFb){try{await fbSetPin(myPlate,hash);}catch(e){}}
+    sv("kpin_"+myPlate,hash);loginSuccess();
+  }else{
+    let stored=null;
+    if(useFb){try{stored=await fbGetPin(myPlate);}catch(e){}}
+    if(!stored)stored=gv("kpin_"+myPlate);
+    if(stored===hash){loginSuccess();}
+    else{document.getElementById("pin-error").classList.add("on");pinBuffer="";updatePinDots();setTimeout(()=>document.getElementById("pin-error").classList.remove("on"),2500);}
+  }
+}
+function loginSuccess(){
+  document.getElementById("auth-modal").classList.remove("on");
+  isLoggedIn=true;
+  document.getElementById("my-plate-display").textContent=fp(myPlate);
+  document.getElementById("header-login-btn").textContent="✅ "+fp(myPlate);
+  document.getElementById("header-login-btn").classList.add("logged");
+  document.getElementById("app-nav").classList.add("on");
+  startListeners();
+  flash("🎉 Connecté — "+fp(myPlate),"s");
+  if(pendingSendObj)doSend(pendingSendObj);
+}
+document.getElementById("header-login-btn").addEventListener("click",()=>{
+  if(isLoggedIn){if(confirm("Se déconnecter ?"))doLogout();}
+  else{const raw=document.getElementById("target-plate").value;const clean=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");const plate=clean.length>=4?clean:(prompt("Votre plaque ?")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(plate.length>=4)openAuth(plate);}
+});
+document.getElementById("logout-btn").addEventListener("click",()=>{if(confirm("Se déconnecter ?"))doLogout();});
+function doLogout(){isLoggedIn=false;myPlate="";pendingSendObj=null;document.getElementById("header-login-btn").textContent="🔐 Se connecter";document.getElementById("header-login-btn").classList.remove("logged");document.getElementById("app-nav").classList.remove("on");switchScreen("home-screen",true);}
+
+// ── NAV ──
+document.querySelectorAll(".at").forEach(b=>b.addEventListener("click",function(){
+  if(!isLoggedIn){flash("🔐 Connecte-toi d'abord !","i");return;}
+  switchScreen(this.dataset.screen);
+}));
+function switchScreen(id){
+  document.querySelectorAll(".at").forEach(b=>b.classList.toggle("on",b.dataset.screen===id));
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));
+  activeScreen=id;
+  if(id==="sent-screen")renderSent();
+  if(id==="convs-screen"){showConvList();renderConvList();}
 }
 
 // ── INBOX ──
 function renderInbox(msgs){
-  if(!msgs) msgs=gl("kx_i_"+myPlate).sort((a,b)=>b.ts-a.ts);
+  if(!msgs)msgs=gl("kx_i_"+myPlate).sort((a,b)=>b.ts-a.ts);
   window._lastMsgs=msgs;
-  const el=document.getElementById("inbox-list");
   const u=msgs.filter(m=>!m.read).length;
   const b=document.getElementById("ubdg");b.textContent=u;b.style.display=u>0?"inline":"none";
-  if(activeTab==="score") renderScore(msgs);
-  if(!msgs.length){el.innerHTML=`<div class="empty"><div class="ei">📭</div><div>Aucun message reçu</div><div class="es">Partagez votre plaque autour de vous !</div></div>`;return;}
+  const el=document.getElementById("inbox-list");
+  if(!msgs.length){el.innerHTML=`<div class="empty-s"><div class="empty-i">📭</div><div class="empty-t">Boîte vide !</div><div class="empty-u">Partagez votre plaque autour de vous</div></div>`;return;}
   el.innerHTML="";
   msgs.forEach(msg=>{
-    const card=document.createElement("div");card.className="mc";
-    card.style.borderLeftColor=CC[msg.category]||"#ffbb33";card.style.opacity=msg.read?"0.8":"1";
-    const rh=RX.map(e=>{const n=(msg.reactions&&msg.reactions[e])||0;return`<button class="rb" data-id="${msg.id}" data-e="${e}" data-n="${n}">${e}${n>0?`<span class="rc">${n}</span>`:""}</button>`;}).join("");
-    card.innerHTML=`<div class="mt"><div class="mf"><span class="fl">De :</span><span class="pm">${fp(msg.from)}</span></div><div style="display:flex;align-items:center;gap:8px">${!msg.read?'<span class="ud"></span>':""}<span class="mtime">${ta(msg.ts)}</span></div></div><div class="mcat">${msg.category}</div><div class="mtxt"><span class="mi">${msg.icon}</span>${msg.text}</div><div class="reacts">${rh}</div>`;
+    const card=document.createElement("div");card.className="bubble-card"+(msg.read?"":" unread");
+    const myVote=msg["_myVote_"+myPlate]||null;
+    const catColor=Object.values(MSGS).find(c=>c.label===msg.category)?.color||"#999";
+    const rh=RX.map(e=>{const n=(msg.reactions&&msg.reactions[e])||0;return`<button class="rxbtn${myVote===e?" myvote":""}" data-id="${msg.id}" data-e="${e}">${e}${n>0?`<span class="rxn">${n}</span>`:""}</button>`;}).join("");
+    card.innerHTML=`
+      <div class="b-top">
+        <div class="b-from">${!msg.read?'<div class="b-udot"></div>':""}<span class="b-plate" data-plate="${msg.from}">${fp(msg.from)}</span>${msg.isPublic?'<span class="b-pub">🌍 Public</span>':""}</div>
+        <span class="b-time">${ta(msg.ts)}</span>
+      </div>
+      <div class="b-cat" style="color:${catColor}">${msg.category}</div>
+      <div class="b-txt"><span class="b-emoji">${msg.icon}</span><span>${msg.text}</span></div>
+      <div class="b-reacts">${rh}<button class="del-b" data-id="${msg.id}">🗑</button></div>`;
+    card.querySelector(".b-plate").addEventListener("click",e=>{e.stopPropagation();openConv(msg.from);});
     card.addEventListener("click",()=>doRead(msg.id));
-    card.querySelectorAll(".rb").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();doReact(msg.id,b.dataset.e,parseInt(b.dataset.n)||0);}));
+    card.querySelectorAll(".rxbtn").forEach(btn=>btn.addEventListener("click",e=>{
+      e.stopPropagation();const prev={...((msg.reactions)||{}),_myVote:myVote};
+      if(myVote===btn.dataset.e)unvote(msg.id,btn.dataset.e,prev);else doReact(msg.id,btn.dataset.e,prev);
+    }));
+    card.querySelector(".del-b").addEventListener("click",e=>{e.stopPropagation();delInbox(msg.id);});
     el.appendChild(card);
   });
 }
-async function doRead(id){
-  if(useFb){await fbRead(myPlate,id);}
-  else{const m=gl("kx_i_"+myPlate).map(x=>x.id==id?{...x,read:true}:x);sloc("kx_i_"+myPlate,m);renderInbox();}
-}
-async function doReact(id,emoji,n){
-  if(useFb){await fbReact(myPlate,id,emoji,n);}
-  else{const m=gl("kx_i_"+myPlate).map(x=>{if(x.id!=id)return x;const r={...(x.reactions||{})};r[emoji]=(r[emoji]||0)+1;return{...x,reactions:r,read:true};});sloc("kx_i_"+myPlate,m);renderInbox();}
-}
+async function doRead(id){if(useFb)await fbRead(myPlate,id);else{const m=gl("kx_i_"+myPlate).map(x=>x.id==id?{...x,read:true}:x);sloc("kx_i_"+myPlate,m);renderInbox();}}
+async function doReact(id,emoji,prev){if(useFb)await fbReact(myPlate,id,emoji,prev,myPlate);else{const m=gl("kx_i_"+myPlate).map(x=>{if(x.id!=id)return x;const r={...(x.reactions||{})};if(prev._myVote)r[prev._myVote]=Math.max(0,(r[prev._myVote]||1)-1);r[emoji]=(r[emoji]||0)+1;return{...x,reactions:r,["_myVote_"+myPlate]:emoji,read:true};});sloc("kx_i_"+myPlate,m);renderInbox();}}
+async function unvote(id,emoji,prev){if(useFb){const u={[`reactions/${emoji}`]:Math.max(0,(prev[emoji]||1)-1),[`_myVote_${myPlate}`]:null};await window._update(window._ref(window._db,`kx/${myPlate}/${id}`),u);}else{const m=gl("kx_i_"+myPlate).map(x=>{if(x.id!=id)return x;const r={...(x.reactions||{})};r[emoji]=Math.max(0,(r[emoji]||1)-1);const nx={...x,reactions:r};delete nx["_myVote_"+myPlate];return nx;});sloc("kx_i_"+myPlate,m);renderInbox();}}
+async function delInbox(id){if(!confirm("Supprimer ?"))return;if(useFb){try{await fbDel(myPlate,id);}catch(e){}}else{sloc("kx_i_"+myPlate,gl("kx_i_"+myPlate).filter(x=>x.id!=id));renderInbox();}}
 
 // ── SENT ──
 function renderSent(){
   const msgs=gl("kx_s_"+myPlate).sort((a,b)=>b.ts-a.ts);
   const el=document.getElementById("sent-list");
-  if(!msgs.length){el.innerHTML=`<div class="empty"><div class="ei">📤</div><div>Aucun message envoyé</div></div>`;return;}
+  if(!msgs.length){el.innerHTML=`<div class="empty-s"><div class="empty-i">📤</div><div class="empty-t">Rien d'envoyé</div></div>`;return;}
   el.innerHTML="";
-  msgs.forEach(msg=>{const c=document.createElement("div");c.className="mc";c.style.borderLeftColor=CC[msg.category]||"#ffbb33";c.innerHTML=`<div class="mt"><div class="mf"><span class="fl">À :</span><span class="pm">${fp(msg.to)}</span></div><span class="mtime">${ta(msg.ts)}</span></div><div class="mcat">${msg.category}</div><div class="mtxt"><span class="mi">${msg.icon}</span>${msg.text}</div>`;el.appendChild(c);});
-}
-
-// ── SCORE ──
-function calcScore(msgs){
-  let score=0,comp=0,rales=0,infos=0;
-  msgs.forEach(m=>{
-    if(m.category==="😊 Complimenter"){score+=10;comp++;}
-    else if(m.category==="😤 Râler"){score-=5;rales++;}
-    else if(m.category==="💡 Informer"){score+=2;infos++;}
-    if(m.reactions){score+=(m.reactions["❤️"]||0)+(m.reactions["👍"]||0);}
-  });
-  return{score,comp,rales,infos};
-}
-function getLevel(s){return LEVELS.find(l=>s>=l.min)||LEVELS[LEVELS.length-1];}
-
-function renderScore(msgs){
-  const el=document.getElementById("score-view");
-  const {score,comp,rales,infos}=calcScore(msgs);
-  const lv=getLevel(score);
-  const lvIdx=LEVELS.findIndex(l=>score>=l.min);
-  const nextLv=lvIdx>0?LEVELS[lvIdx-1]:null;
-  const pct=nextLv?Math.min(100,Math.round(((score-lv.min)/(nextLv.min-lv.min))*100)):100;
-  const history=msgs.slice(0,8).map(m=>{
-    let delta=0,col="#888";
-    if(m.category==="😊 Complimenter"){delta=+10;col="#44dd88";}
-    else if(m.category==="😤 Râler"){delta=-5;col="#ff4444";}
-    else if(m.category==="💡 Informer"){delta=+2;col="#ffbb33";}
-    const bonus=m.reactions?((m.reactions["❤️"]||0)+(m.reactions["👍"]||0)):0;
-    return`<div class="sh-item"><span style="font-size:17px">${m.icon}</span><span class="sh-txt">${m.text.length>38?m.text.slice(0,38)+"…":m.text}</span><span class="sh-delta" style="color:${col}">${delta>=0?"+":""}${delta+bonus}</span><span class="sh-time">${ta(m.ts)}</span></div>`;
-  }).join("");
-
-  el.innerHTML=`
-    <div class="score-header">
-      <div class="score-plate-big">🇫🇷 ${fp(myPlate)}</div>
-      <div class="score-circle" style="border-color:${lv.color};box-shadow:0 0 24px ${lv.color}33">
-        <div class="score-number" style="color:${lv.color}">${score}</div>
-        <div class="score-pts" style="color:${lv.color}">POINTS</div>
+  msgs.forEach((msg,i)=>{
+    const catColor=Object.values(MSGS).find(x=>x.label===msg.category)?.color||"#999";
+    const c=document.createElement("div");c.className="sent-card";
+    c.innerHTML=`
+      <div class="sent-top">
+        <div class="b-from"><span class="b-plate" style="cursor:pointer">${fp(msg.to)}</span>${msg.isPublic?'<span class="b-pub">🌍</span>':""}</div>
+        <div class="sent-actions">
+          <button class="btn-sm" data-plate="${msg.to}">💬</button>
+          <button class="btn-sm danger" data-idx="${i}">🗑</button>
+        </div>
       </div>
-      <div class="score-medal">${lv.medal}</div>
-      <div class="score-level" style="color:${lv.color}">${lv.label}</div>
-      ${nextLv?`
-        <div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%;background:${lv.color}"></div></div>
-        <div class="score-bar-label"><span>Niveau actuel</span><span>${nextLv.min-score} pts pour "${nextLv.label}"</span></div>
-      `:`<div style="margin-top:10px;font-size:12px;color:#ffcc00">🎉 Niveau maximum !</div>`}
-    </div>
-    <div class="score-stats">
-      <div class="stat-card"><div class="stat-icon">😊</div><div class="stat-val" style="color:#44dd88">${comp}</div><div class="stat-lbl">Compliments</div></div>
-      <div class="stat-card"><div class="stat-icon">😤</div><div class="stat-val" style="color:#ff4444">${rales}</div><div class="stat-lbl">Râleries</div></div>
-      <div class="stat-card"><div class="stat-icon">💡</div><div class="stat-val" style="color:#ffbb33">${infos}</div><div class="stat-lbl">Infos reçues</div></div>
-    </div>
-    ${msgs.length>0?`<div class="score-history"><div class="sh-title">Historique des points</div>${history}</div>`:""}
-    ${msgs.length===0?`<div class="empty"><div class="ei">🏁</div><div>Aucun message reçu</div><div class="es">Votre score se construit dès que vous recevez des messages !</div></div>`:""}
-  `;
+      <div class="b-cat" style="color:${catColor}">${msg.category}</div>
+      <div class="b-txt"><span class="b-emoji">${msg.icon}</span><span>${msg.text}</span></div>
+      <div style="font-size:11px;color:#bbb;font-weight:600;margin-top:4px">${ta(msg.ts)}</div>`;
+    c.querySelectorAll(".btn-sm").forEach(btn=>{
+      if(btn.dataset.plate)btn.addEventListener("click",()=>openConv(btn.dataset.plate));
+      if(btn.dataset.idx!==undefined)btn.addEventListener("click",()=>{if(confirm("Supprimer ?")){const m=gl("kx_s_"+myPlate);m.splice(parseInt(btn.dataset.idx),1);sloc("kx_s_"+myPlate,m);renderSent();}});
+    });
+    el.appendChild(c);
+  });
 }
 
-// ── CAT TABS & GRID ──
-function renderCats(){
-  const el=document.getElementById("ctabs");el.innerHTML="";
-  Object.keys(MSGS).forEach(cat=>{const b=document.createElement("button");b.className="ctab";b.textContent=cat;b.style.color=cat===activeCat?CC[cat]:"#888";b.style.borderBottomColor=cat===activeCat?CC[cat]:"transparent";b.addEventListener("click",()=>{activeCat=cat;renderCats();renderGrid();});el.appendChild(b);});
+// ── CONVERSATIONS ──
+function showConvList(){document.getElementById("conv-list-wrap").style.display="block";document.getElementById("thread-view").classList.remove("on");}
+function renderConvList(){
+  const el=document.getElementById("conv-list");
+  const plates=new Set([...gl("kx_s_"+myPlate).map(m=>m.to),...(window._lastMsgs||[]).map(m=>m.from)]);
+  if(!plates.size){el.innerHTML=`<div class="empty-s"><div class="empty-i">💬</div><div class="empty-t">Aucune conversation</div></div>`;return;}
+  el.innerHTML="";
+  plates.forEach(plate=>{
+    const lastSent=gl("kx_s_"+myPlate).filter(m=>m.to===plate).sort((a,b)=>b.ts-a.ts)[0];
+    const lastRecv=(window._lastMsgs||[]).filter(m=>m.from===plate).sort((a,b)=>b.ts-a.ts)[0];
+    const last=[lastSent,lastRecv].filter(Boolean).sort((a,b)=>b.ts-a.ts)[0];
+    const item=document.createElement("div");item.className="conv-item";
+    item.innerHTML=`<div class="conv-plate">${fp(plate)}</div><div class="conv-info"><div class="conv-last">${last?last.icon+" "+last.text:"…"}</div><div class="conv-time">${last?ta(last.ts):""}</div></div><span style="font-size:20px">→</span>`;
+    item.addEventListener("click",()=>openConv(plate));
+    el.appendChild(item);
+  });
 }
-function renderGrid(){
-  const g=document.getElementById("mgrid");g.innerHTML="";
-  MSGS[activeCat].forEach(msg=>{const b=document.createElement("button");b.className="mbtn";b.style.borderColor=CC[activeCat]+"44";b.innerHTML=`<span class="mbi">${msg.icon}</span><span class="mbt">${msg.text}</span>`;b.addEventListener("click",()=>sendMsg(msg));g.appendChild(b);});
+function openConv(plate){
+  currentConvPlate=plate;
+  if(!isLoggedIn){pendingSendObj={icon:"💬",text:"",category:"",to:plate,isPublic:false};openAuth(plate);return;}
+  switchScreen("convs-screen");
+  document.getElementById("conv-list-wrap").style.display="none";
+  document.getElementById("thread-view").classList.add("on");
+  document.getElementById("thread-plate-label").textContent=fp(plate);
+  loadThread(plate);
+}
+document.getElementById("thread-back").addEventListener("click",()=>{showConvList();renderConvList();});
+function loadThread(plate){
+  const key=convKey(myPlate,plate);
+  if(convUnsub){convUnsub();convUnsub=null;}
+  if(useFb){convUnsub=fbListenConv(key,msgs=>renderThread(msgs,plate));}
+  else{renderThread(gl("conv_"+key).sort((a,b)=>a.ts-b.ts),plate);}
+}
+function renderThread(msgs,plate){
+  const el=document.getElementById("thread-msgs");
+  if(!msgs.length){el.innerHTML=`<div class="empty-s"><div class="empty-i">💬</div><div class="empty-t">Démarrez !</div></div>`;return;}
+  el.innerHTML="";
+  msgs.forEach(msg=>{
+    const b=document.createElement("div");b.className="tbub "+(msg.from===myPlate?"me":"them");
+    b.innerHTML=`${msg.from===myPlate?`<button class="tbub-del" data-id="${msg.id}">🗑</button>`:""}<span style="font-size:15px">${msg.icon||"💬"}</span> ${msg.text}<div class="tbub-time">${ta(msg.ts)}</div>`;
+    if(msg.from===myPlate)b.querySelector(".tbub-del").addEventListener("click",()=>delConvMsg(msg.id,plate));
+    el.appendChild(b);
+  });
+  el.scrollTop=el.scrollHeight;
+}
+async function delConvMsg(id,plate){if(!confirm("Supprimer ?"))return;const key=convKey(myPlate,plate);if(useFb){try{await fbDelConv(key,id);}catch(e){}}else{sloc("conv_"+key,gl("conv_"+key).filter(x=>x.id!=id));loadThread(plate);}}
+document.getElementById("thread-send").addEventListener("click",sendThread);
+document.getElementById("thread-input").addEventListener("keydown",e=>{if(e.key==="Enter")sendThread();});
+async function sendThread(){
+  const text=document.getElementById("thread-input").value.trim();if(!text||!currentConvPlate)return;
+  const key=convKey(myPlate,currentConvPlate);
+  const msg={id:Date.now()+Math.random(),from:myPlate,to:currentConvPlate,icon:"💬",text,ts:Date.now(),category:""};
+  if(useFb){try{await fbSendConv(key,msg);}catch(e){flash("❌ Erreur","e");return;}}
+  else{const m=gl("conv_"+key);m.push(msg);sloc("conv_"+key,m);loadThread(currentConvPlate);}
+  document.getElementById("thread-input").value="";
 }
 
-// ── START APP ──
-function startApp(){
-  renderCats();renderGrid();
-  if(useFb){
-    fbListen(myPlate,msgs=>renderInbox(msgs));
-  } else {
-    renderInbox();
-    setInterval(()=>{if(activeTab==="inbox")renderInbox();},5000);
-  }
-}
+// ── CAMERA ──
+let camStream=null;
+document.getElementById("cam-open-btn").addEventListener("click",async()=>{
+  try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});document.getElementById("cam-video").srcObject=camStream;document.getElementById("cam-modal").classList.add("on");document.getElementById("cam-proc").classList.remove("on");document.getElementById("cam-btns").style.display="flex";}
+  catch(e){flash("📷 Caméra non disponible","e");}
+});
+document.getElementById("cam-cancel").addEventListener("click",stopCam);
+function stopCam(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}document.getElementById("cam-modal").classList.remove("on");}
+document.getElementById("cam-snap").addEventListener("click",async()=>{
+  const video=document.getElementById("cam-video");const canvas=document.getElementById("cam-canvas");
+  canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+  canvas.getContext("2d").drawImage(video,0,0);stopCam();
+  document.getElementById("cam-proc").classList.add("on");document.getElementById("cam-modal").classList.add("on");document.getElementById("cam-btns").style.display="none";
+  const imgData=canvas.toDataURL("image/jpeg",.85).split(",")[1];
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:60,messages:[{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:imgData}},
+        {type:"text",text:"Lis la plaque d'immatriculation. Réponds UNIQUEMENT avec les caractères alphanumériques, sans espace ni tiret. Si illisible: ILLISIBLE"}
+      ]}]})
+    });
+    const data=await res.json();
+    const plate=(data.content?.[0]?.text||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+    document.getElementById("cam-modal").classList.remove("on");
+    if(plate&&plate!=="ILLISIBLE"&&plate.length>=4){
+      document.getElementById("target-plate").value=plate;
+      document.getElementById("target-preview").textContent=fp(plate);
+      document.getElementById("action-row").style.display="grid";
+      flash("✅ "+fp(plate)+" — plaque reconnue !","s");
+    }else{flash("❌ Illisible, saisis manuellement","e");}
+  }catch(e){document.getElementById("cam-modal").classList.remove("on");flash("❌ Erreur de lecture","e");}
+});
 
-// ── BOOT ──
-function boot(){
-  useFb=!!(window._fbReady);
-  if(useFb) document.getElementById("odot").style.display="inline-block";
-  document.getElementById("loading").style.display="none";
-  document.getElementById("login").classList.add("on");
-}
-if(window._fbReady!==undefined){boot();}
-else{window.addEventListener("fb-ready",boot);setTimeout(boot,3000);}
+// ── START ──
+function startListeners(){if(useFb){fbListen(myPlate,msgs=>renderInbox(msgs));}else{renderInbox();setInterval(()=>{if(activeScreen==="inbox-screen")renderInbox();},5000);}}
+function boot(){useFb=!!(window._fbReady);document.getElementById("loading").style.display="none";document.getElementById("home").classList.add("on");buildHomeGrid();}
+if(window._fbReady!==undefined){boot();}else{window.addEventListener("fb-ready",boot);setTimeout(boot,3000);}
 </script>
 </body>
 </html>
